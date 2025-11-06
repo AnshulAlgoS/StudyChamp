@@ -6,6 +6,7 @@ import com.runanywhere.sdk.public.RunAnywhere
 import com.runanywhere.sdk.data.models.SDKEnvironment
 import com.runanywhere.sdk.public.extensions.addModelFromURL
 import com.runanywhere.sdk.llm.llamacpp.LlamaCppServiceProvider
+import com.runanywhere.startup_hackathon20.repository.GamificationRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -18,6 +19,7 @@ class MyApplication : Application() {
         // Initialize SDK asynchronously
         GlobalScope.launch(Dispatchers.IO) {
             initializeSDK()
+            initializeGamification()
         }
     }
 
@@ -43,6 +45,22 @@ class MyApplication : Application() {
 
         } catch (e: Exception) {
             Log.e("MyApp", "SDK initialization failed: ${e.message}")
+        }
+    }
+
+    private suspend fun initializeGamification() {
+        try {
+            val repository = GamificationRepository(this@MyApplication)
+
+            // Initialize achievements in database
+            repository.initializeAchievements()
+
+            // Ensure user progress exists
+            repository.getUserProgressSync()
+
+            Log.i("MyApp", "Gamification system initialized")
+        } catch (e: Exception) {
+            Log.e("MyApp", "Gamification initialization failed: ${e.message}", e)
         }
     }
 

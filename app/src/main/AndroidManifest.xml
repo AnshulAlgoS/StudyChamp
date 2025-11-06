@@ -13,16 +13,16 @@
         android:largeHeap="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/studychamp"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@drawable/studychamp"
         android:supportsRtl="true"
         android:theme="@style/Theme.Startup_hackathon20">
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.Startup_hackathon20">
+            android:theme="@style/Theme.StudyChamp.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

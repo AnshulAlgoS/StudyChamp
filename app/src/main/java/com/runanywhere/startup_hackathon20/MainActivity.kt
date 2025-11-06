@@ -1,9 +1,15 @@
 package com.runanywhere.startup_hackathon20
 
 import android.os.Bundle
+import android.view.View
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
+// import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -19,6 +25,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -26,258 +35,409 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.NewInstanceFactory
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.runanywhere.startup_hackathon20.ui.*
 import com.runanywhere.startup_hackathon20.ui.theme.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // val splashScreen = installSplashScreen()  // Uncomment after Gradle sync
+
+        // Make status bar purple - NO WHITE HEADER
+        window.apply {
+            statusBarColor = android.graphics.Color.parseColor("#6200EE")  // Purple40
+            navigationBarColor = android.graphics.Color.parseColor("#6200EE")
+        }
+
+        // Set status bar icons to light color (white) since background is purple
+        WindowCompat.getInsetsController(window, window.decorView).apply {
+            isAppearanceLightStatusBars = false  // Use light (white) icons on dark background
+        }
+
         setContent {
+            val viewModel: FirebaseStudyViewModel =
+                ViewModelProvider(this, FirebaseStudyViewModelFactory(application)).get(
+                    FirebaseStudyViewModel::class.java
+                )
             Startup_hackathon20Theme {
-                StudyChampApp()
+                StudyChampApp(viewModel = viewModel)
             }
         }
     }
 }
 
 @Composable
-fun StudyChampApp(viewModel: StudyViewModel = viewModel()) {
-    val studyMessages by viewModel.studyMessages.collectAsState()
+fun StudyChampApp(viewModel: FirebaseStudyViewModel = viewModel()) {
+    val userProfile by viewModel.userProfile.collectAsState()
+    val isSignedIn by viewModel.isSignedIn.collectAsState()
     val isModelReady by viewModel.isModelReady.collectAsState()
+    val currentQuiz by viewModel.currentQuiz.collectAsState()
+    val currentFlashcards by viewModel.currentFlashcards.collectAsState()
+    val currentMentor by viewModel.currentMentor.collectAsState()
 
     var currentScreen by remember { mutableStateOf(AppScreen.HOME) }
+    var showProfileSetup by remember { mutableStateOf(false) }
+
+    // Check if user needs profile setup
+    LaunchedEffect(isSignedIn, userProfile) {
+        if (isSignedIn && userProfile == null) {
+            showProfileSetup = true
+        } else if (userProfile != null && showProfileSetup) {
+            showProfileSetup = false
+            // Show mentor selection if no mentor selected
+            if (userProfile?.selectedMentor.isNullOrEmpty()) {
+                currentScreen = AppScreen.MENTOR_SELECT
+            }
+        }
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        when (currentScreen) {
-            AppScreen.HOME -> HomeScreen(
-                viewModel = viewModel,
-                onNavigateToStudy = { currentScreen = AppScreen.STUDY },
-                onNavigateToModels = { currentScreen = AppScreen.MODELS }
-            )
+        when {
+            // Profile Setup for new users
+            showProfileSetup -> {
+                ProfileSetupScreen(
+                    onProfileCreated = { name, email ->
+                        viewModel.createOrUpdateProfile(name, email)
+                        currentScreen = AppScreen.MENTOR_SELECT
+                    }
+                )
+            }
+            // Quiz active
+            currentQuiz != null -> {
+                QuizScreen(
+                    quizData = currentQuiz!!,
+                    onQuizComplete = { correct, total ->
+                        viewModel.completeQuiz(correct, total)
+                        currentScreen = AppScreen.STUDY
+                    },
+                    onBack = {
+                        viewModel.resetJourney()
+                        currentScreen = AppScreen.HOME
+                    }
+                )
+            }
+            // Flashcards active
+            currentFlashcards != null -> {
+                FlashcardScreen(
+                    flashcardSet = currentFlashcards!!,
+                    onComplete = { mastered ->
+                        viewModel.completeFlashcards(mastered, currentFlashcards!!.cards.size)
+                        currentScreen = AppScreen.STUDY
+                    },
+                    onBack = {
+                        viewModel.resetJourney()
+                        currentScreen = AppScreen.HOME
+                    }
+                )
+            }
+            // Regular navigation
+            else -> when (currentScreen) {
+                AppScreen.MENTOR_SELECT -> MentorSelectionScreen(
+                    onMentorSelected = { mentorId ->
+                        viewModel.selectMentor(mentorId)
+                        currentScreen = AppScreen.HOME
+                    }
+                )
 
-            AppScreen.STUDY -> StudyJourneyScreen(
-                viewModel = viewModel,
-                onNavigateBack = {
-                    viewModel.resetJourney()
-                    currentScreen = AppScreen.HOME
+                AppScreen.HOME -> HomeScreen(
+                    viewModel = viewModel,
+                    userProfile = userProfile,
+                    onNavigateToStudy = { currentScreen = AppScreen.STUDY },
+                    onNavigateToModels = { currentScreen = AppScreen.MODELS },
+                    onNavigateToAchievements = { currentScreen = AppScreen.ACHIEVEMENTS },
+                    onNavigateToProfile = { currentScreen = AppScreen.PROFILE }
+                )
+
+                AppScreen.STUDY -> StudyJourneyScreen(
+                    viewModel = viewModel,
+                    onNavigateBack = {
+                        viewModel.resetJourney()
+                        currentScreen = AppScreen.HOME
+                    }
+                )
+
+                AppScreen.MODELS -> ModelManagementScreen(
+                    viewModel = viewModel,
+                    onNavigateBack = { currentScreen = AppScreen.HOME }
+                )
+
+                AppScreen.ACHIEVEMENTS -> {
+                    val achievements by viewModel.achievements.collectAsState()
+                    AchievementsScreen(
+                        achievements = achievements,
+                        onBack = { currentScreen = AppScreen.HOME }
+                    )
                 }
-            )
 
-            AppScreen.MODELS -> ModelManagementScreen(
-                viewModel = viewModel,
-                onNavigateBack = { currentScreen = AppScreen.HOME }
-            )
+                AppScreen.PROFILE -> {
+                    userProfile?.let {
+                        ProfileScreen(
+                            userProfile = it,
+                            onBack = { currentScreen = AppScreen.HOME },
+                            onChangeMentor = { currentScreen = AppScreen.MENTOR_SELECT },
+                            onEditProfile = { name, email ->
+                                viewModel.createOrUpdateProfile(name, email)
+                            }
+                        )
+                    } ?: run {
+                        // Show loading/error screen if profile not loaded
+                        ProfileLoadingScreen(
+                            onBack = { currentScreen = AppScreen.HOME },
+                            onRetry = { viewModel.signInAnonymously() }
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 enum class AppScreen {
-    HOME, STUDY, MODELS
+    MENTOR_SELECT, HOME, STUDY, MODELS, ACHIEVEMENTS, PROFILE
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    viewModel: StudyViewModel,
+    viewModel: FirebaseStudyViewModel,
+    userProfile: UserProfile?,
     onNavigateToStudy: () -> Unit,
-    onNavigateToModels: () -> Unit
+    onNavigateToModels: () -> Unit,
+    onNavigateToAchievements: () -> Unit,
+    onNavigateToProfile: () -> Unit
 ) {
     val statusMessage by viewModel.statusMessage.collectAsState()
     val isModelReady by viewModel.isModelReady.collectAsState()
+    val currentMentor by viewModel.currentMentor.collectAsState()
 
     var subject by remember { mutableStateOf("") }
     var topics by remember { mutableStateOf("") }
 
-    // Animated gradient background
-    val infiniteTransition = rememberInfiniteTransition(label = "gradient")
-    val offsetX by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "gradientOffset"
-    )
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Purple80,
-                        Teal80,
-                        Yellow80.copy(alpha = 0.3f)
-                    )
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { 
+                    Column {
+                        Text(
+                            text = "StudyChamp",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Your AI Study Companion",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Purple40,
+                    titleContentColor = Color.White
                 )
             )
-    ) {
-        Column(
+        },
+        containerColor = LightBackground,
+        contentWindowInsets = WindowInsets.systemBars
+    ) { padding ->
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(24.dp),
+                .padding(padding)
+                .padding(horizontal = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(vertical = 16.dp)
         ) {
-            // Header
-            Text(
-                text = "StudyChamp",
-                style = MaterialTheme.typography.displayLarge,
-                fontWeight = FontWeight.Bold,
-                color = DeepPurple
-            )
+            // Profile HUD (Firebase version)
+            item {
+                userProfile?.let {
+                    FirebaseProfileHUD(userProfile = it)
+                }
+            }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Your AI Study Companion",
-                style = MaterialTheme.typography.titleMedium,
-                color = DeepTeal
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Welcome message
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = CardLight.copy(alpha = 0.9f)
-                ),
-                elevation = CardDefaults.cardElevation(8.dp),
-                shape = RoundedCornerShape(24.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+            // Quick actions
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        text = "Hey Champ! 👋",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Purple40
+                    QuickActionButton(
+                        icon = Icons.Default.Star,
+                        label = "Achievements",
+                        onClick = onNavigateToAchievements,
+                        modifier = Modifier.weight(1f)
                     )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "Ready to learn something awesome today?",
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurface
+                    QuickActionButton(
+                        icon = Icons.Default.Person,
+                        label = "Profile",
+                        onClick = onNavigateToProfile,
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            // Current mentor display
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = CardLight.copy(alpha = 0.9f)
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = currentMentor.emoji,
+                            style = MaterialTheme.typography.displaySmall
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "Your Mentor: ${currentMentor.name}",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = currentMentor.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
 
             // Input fields
-            OutlinedTextField(
-                value = subject,
-                onValueChange = { subject = it },
-                label = { Text("Subject") },
-                placeholder = { Text("e.g., Physics, History, Math...") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = CardLight,
-                    unfocusedContainerColor = CardLight
-                ),
-                shape = RoundedCornerShape(16.dp),
-                leadingIcon = { Icon(Icons.Default.Edit, "Subject") }
-            )
+            item {
+                OutlinedTextField(
+                    value = subject,
+                    onValueChange = { subject = it },
+                    label = { Text("Subject") },
+                    placeholder = { Text("e.g., Physics, History, Math...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = CardLight,
+                        unfocusedContainerColor = CardLight
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    leadingIcon = { Icon(Icons.Default.Edit, "Subject") }
+                )
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = topics,
-                onValueChange = { topics = it },
-                label = { Text("Topics") },
-                placeholder = { Text("e.g., Newton's Laws, Momentum...") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                minLines = 2,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = CardLight,
-                    unfocusedContainerColor = CardLight
-                ),
-                shape = RoundedCornerShape(16.dp),
-                leadingIcon = { Icon(Icons.Default.List, "Topics") }
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
+            item {
+                OutlinedTextField(
+                    value = topics,
+                    onValueChange = { topics = it },
+                    label = { Text("Topics") },
+                    placeholder = { Text("e.g., Newton's Laws, Momentum...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = CardLight,
+                        unfocusedContainerColor = CardLight
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    leadingIcon = { Icon(Icons.Default.List, "Topics") }
+                )
+            }
 
             // Start button
-            Button(
-                onClick = {
-                    if (subject.isNotBlank() && topics.isNotBlank()) {
-                        viewModel.startStudyJourney(subject, topics)
-                        onNavigateToStudy()
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
-                    .padding(horizontal = 16.dp),
-                enabled = isModelReady && subject.isNotBlank() && topics.isNotBlank(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Purple40,
-                    contentColor = Color.White
-                ),
-                shape = RoundedCornerShape(16.dp),
-                elevation = ButtonDefaults.buttonElevation(8.dp)
-            ) {
-                Icon(Icons.Default.Star, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Start My Study Journey",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+            item {
+                Button(
+                    onClick = {
+                        if (subject.isNotBlank() && topics.isNotBlank()) {
+                            viewModel.startStudyJourney(subject, topics)
+                            onNavigateToStudy()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
+                    enabled = isModelReady && subject.isNotBlank() && topics.isNotBlank(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Purple40,
+                        contentColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = ButtonDefaults.buttonElevation(8.dp)
+                ) {
+                    Icon(Icons.Default.Star, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Start My Study Journey",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
 
             // Models button
-            OutlinedButton(
-                onClick = onNavigateToModels,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Icon(Icons.Default.Settings, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Model Settings")
+            item {
+                OutlinedButton(
+                    onClick = onNavigateToModels,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Model Settings")
+                }
             }
-
-            Spacer(modifier = Modifier.height(24.dp))
 
             // Status message
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                color = if (isModelReady) SuccessGreen.copy(alpha = 0.2f)
-                else WarningOrange.copy(alpha = 0.2f),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = statusMessage,
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    color = if (isModelReady) SuccessGreen else WarningOrange
-                )
+            item {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = if (isModelReady) SuccessGreen.copy(alpha = 0.2f)
+                    else WarningOrange.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = statusMessage,
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        color = if (isModelReady) SuccessGreen else WarningOrange
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+fun QuickActionButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.height(56.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Teal40
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(label, style = MaterialTheme.typography.labelSmall)
         }
     }
 }
@@ -285,7 +445,7 @@ fun HomeScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudyJourneyScreen(
-    viewModel: StudyViewModel,
+    viewModel: FirebaseStudyViewModel,
     onNavigateBack: () -> Unit
 ) {
     val studyMessages by viewModel.studyMessages.collectAsState()
@@ -310,7 +470,8 @@ fun StudyJourneyScreen(
                 )
             )
         },
-        containerColor = LightBackground
+        containerColor = LightBackground,
+        contentWindowInsets = WindowInsets.systemBars
     ) { padding ->
         Column(
             modifier = Modifier
@@ -348,6 +509,62 @@ fun StudyJourneyScreen(
                         )
                     }
                 }
+
+                // Show Quiz/Flashcard options after content
+                if (studyMessages.isNotEmpty() && !isGenerating) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Teal80
+                            ),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(20.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Text(
+                                    text = "🎯 Test Your Knowledge!",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Teal40
+                                )
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Button(
+                                        onClick = {
+                                            viewModel.askFollowUpQuestion("quiz")
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Purple40
+                                        ),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Text("📝 Take Quiz")
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            viewModel.askFollowUpQuestion("flashcards")
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Gold
+                                        ),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Text("🃏 Flashcards")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             // Auto-scroll
@@ -374,7 +591,7 @@ fun StudyJourneyScreen(
                         value = questionText,
                         onValueChange = { questionText = it },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Ask a question, Champ...") },
+                        placeholder = { Text("Ask a question or type 'quiz' / 'flashcards'...") },
                         shape = RoundedCornerShape(24.dp),
                         enabled = !isGenerating
                     )
@@ -644,7 +861,7 @@ fun LearningOptionsCard(
     subject: String,
     topics: String,
     options: List<LearningOption>,
-    viewModel: StudyViewModel
+    viewModel: FirebaseStudyViewModel
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -707,7 +924,7 @@ fun LearningOptionsCard(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModelManagementScreen(
-    viewModel: StudyViewModel,
+    viewModel: FirebaseStudyViewModel,
     onNavigateBack: () -> Unit
 ) {
     val availableModels by viewModel.availableModels.collectAsState()
@@ -731,14 +948,15 @@ fun ModelManagementScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Teal40,
+                    containerColor = Purple40,
                     titleContentColor = Color.White,
                     navigationIconContentColor = Color.White,
                     actionIconContentColor = Color.White
                 )
             )
         },
-        containerColor = LightBackground
+        containerColor = LightBackground,
+        contentWindowInsets = WindowInsets.systemBars
     ) { padding ->
         Column(
             modifier = Modifier
@@ -906,3 +1124,61 @@ fun ModelCard(
         }
     }
 }
+
+@Composable
+fun FirebaseProfileHUD(userProfile: UserProfile) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Purple80
+        ),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left side - Level and XP
+            Column {
+                Text(
+                    text = "Level ${userProfile.level}",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Gold
+                )
+                Text(
+                    text = "${userProfile.totalXP} XP",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Teal40
+                )
+            }
+
+            // Right side - Streak
+            Column(horizontalAlignment = Alignment.End) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "🔥",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "${userProfile.currentStreak}",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFFF6B35)
+                    )
+                }
+                Text(
+                    text = "day streak",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
