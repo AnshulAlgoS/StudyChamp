@@ -1,235 +1,437 @@
-# StudyChamp - Your AI Study Companion 🎓
-
-An engaging Android study app that transforms learning into an adventure! StudyChamp uses the
-RunAnywhere SDK for on-device AI inference to create personalized, storytelling-driven learning
-experiences.
-
-## 🌟 What This App Does
-
-StudyChamp is your personal AI mentor that helps you learn any subject through engaging
-storytelling. Simply enter your subject and topics, and watch as the AI creates a customized
-learning journey just for you!
-
-## ✨ Features
-
-- **🎨 Vibrant Student-Friendly UI**: Beautiful gradient backgrounds with purple, teal, and yellow
-  themes
-- **📖 Storytelling Learning**: AI addresses you as "Champ" or "Explorer" and presents concepts as
-  adventures
-- **🗺️ Personalized Study Journeys**: AI breaks down topics into digestible chapters with narratives
-- **💬 Interactive Q&A**: Ask follow-up questions and get motivational, story-driven responses
-- **🤖 On-Device AI**: All inference runs locally on your Android device using RunAnywhere SDK
-- **📱 Modern Jetpack Compose**: Clean, responsive UI with smooth animations
-
-## 🚀 Quick Start
-
-### 1. Build and Run
-
-```bash
-./gradlew assembleDebug
-# Or open in Android Studio and click Run
-```
-
-### 2. Download & Load a Model
-
-1. Launch StudyChamp
-2. Tap **"Model Settings"** button on the home screen
-3. Tap **"Download"** on a model (recommended: Qwen 2.5 0.5B Instruct - 374 MB)
-4. Once downloaded, tap **"Load"** to activate the AI mentor
-5. Go back to the home screen
-
-### 3. Start Your Learning Journey!
-
-1. Enter your **Subject** (e.g., "Physics", "History", "Programming")
-2. Enter **Topics** you want to learn (e.g., "Newton's Laws, Momentum, Energy")
-3. Tap **"Start My Study Journey"** 🚀
-4. Watch as your AI mentor creates a personalized learning adventure!
-5. Ask follow-up questions anytime using the chat input
-
-## 🎯 How It Works
-
-### Example Study Journey
-
-**Input:**
-
-- Subject: Physics
-- Topics: Newton's Laws of Motion
-
-**AI Response (Storytelling Style):**
-
-```
-Alright Champ! Today we're entering Newton's Realm, where three powerful 
-laws govern the universe of motion. Think of yourself as a physics explorer, 
-about to uncover secrets that explain everything from how you walk to how 
-rockets soar through space!
-
-Chapter 1: The Law of Inertia - Objects at Rest
-Imagine you're sitting on a skateboard. Why don't you start moving on your 
-own? That's inertia! Newton's first law tells us...
-
-[Resources: Khan Academy video, Interactive simulation, Practice problems]
-
-Chapter 2: Force and Acceleration - The Push Effect
-Now picture pushing that skateboard. The harder you push, the faster you go...
-```
-
-## 🎨 App Screens
-
-### Home Screen
-
-- Welcome message with "Hey Champ! 👋"
-- Subject and Topics input fields
-- Beautiful gradient background
-- Model status indicator
-- Quick access to Model Settings
-
-### Study Journey Screen
-
-- Real-time AI story generation
-- Color-coded message cards (AI, User)
-- Follow-up question input
-- Smooth auto-scrolling
-
-### Model Management Screen
-
-- List of available AI models
-- Download progress tracking
-- One-tap model loading
-- Visual status indicators
-
-## 📦 Available Models
-
-| Model                       | Size   | Quality   | Best For                                     |
-|-----------------------------|--------|-----------|----------------------------------------------|
-| Qwen 2.5 0.5B Instruct Q6_K | 374 MB | Excellent | Story-driven learning, detailed explanations |
-
-*More models can be added in `MyApplication.kt`*
-
-## 🛠️ Technical Details
-
-### SDK Components
-
-- **RunAnywhere Core SDK**: Model management and inference
-- **LlamaCpp Module**: Optimized on-device inference with 7 ARM64 CPU variants
-- **Kotlin Coroutines**: Async operations and streaming responses
-
-### Architecture
-
-```
-MyApplication (SDK initialization)
-    ↓
-StudyViewModel (study journey logic, AI prompts)
-    ↓
-StudyChamp UI (Home → Study Journey → Model Settings)
-```
-
-### Key Files
-
-- **`MyApplication.kt`** - SDK initialization and model registration
-- **`StudyViewModel.kt`** - Study journey management, storytelling prompts
-- **`StudyModels.kt`** - Data models for chapters, resources, journeys
-- **`MainActivity.kt`** - UI components (Home, Study, Models screens)
-- **`ui/theme/`** - Vibrant color scheme and typography
-
-## 🎨 Design Highlights
-
-### Color Palette
-
-- **Primary**: Purple shades (motivation, creativity)
-- **Secondary**: Teal/Cyan (energy, focus)
-- **Accent**: Yellow/Gold (achievement, success)
-- **Status**: Green (success), Orange (warning), Red (error)
-
-### UI Patterns
-
-- Rounded corners (16-24dp) for friendly feel
-- Elevated cards with shadows
-- Smooth gradient backgrounds
-- Icon-enhanced buttons
-- Emoji reactions for engagement
-
-## 💡 AI Storytelling Approach
-
-The AI mentor:
-
-- Addresses students as "Champ" or "Explorer"
-- Uses metaphors and real-world connections
-- Breaks complex topics into narrative "chapters"
-- Provides motivational encouragement
-- Suggests specific learning resources
-- Keeps responses concise but engaging
-
-## 🔧 Requirements
-
-- Android 7.0 (API 24) or higher
-- ~400 MB free storage (for model)
-- Internet connection (for initial model download only)
-- 2GB+ RAM recommended
-
-## 🐛 Troubleshooting
-
-### Models not loading
-
-- Wait 10-15 seconds for SDK initialization
-- Tap "Refresh" in Model Settings
-- Check logcat for initialization errors
-
-### Download fails
-
-- Verify internet connection
-- Ensure sufficient storage space
-- Check INTERNET permission in AndroidManifest.xml
-
-### AI responses seem generic
-
-- Try smaller, more specific topics
-- Ask follow-up questions for depth
-- The AI quality depends on the model size
-
-### App is slow
-
-- Normal for on-device AI
-- Smaller models = faster responses
-- Close other apps to free RAM
-- Device CPU affects performance
-
-## 🚀 Customization Ideas
-
-Want to enhance StudyChamp?
-
-1. **Add Daily Streaks**: Track consecutive learning days
-2. **Progress Persistence**: Save journeys with Room database
-3. **Quiz Generation**: AI creates practice questions
-4. **Study Schedules**: Remind students to learn
-5. **Achievement System**: Badges for completed chapters
-6. **Multi-Language**: Support different languages
-7. **Voice Input**: Speak your questions
-8. **Resource Integration**: Open links in-app
-9. **Study Groups**: Share journeys with friends
-10. **Adaptive Learning**: AI adjusts difficulty based on responses
-
-## 📚 Resources
-
-- [RunAnywhere SDK Complete Guide](RUNANYWHERE_SDK_COMPLETE_GUIDE.md)
-- [RunAnywhere SDK Repository](https://github.com/RunanywhereAI/runanywhere-sdks)
-- [Quick Start Android Guide](app/src/main/java/com/runanywhere/startup_hackathon20/QUICK_START_ANDROID.md)
-
-## 🎓 Educational Philosophy
-
-StudyChamp believes that:
-
-- **Learning should be fun** - Stories make concepts memorable
-- **Everyone's a champion** - Positive reinforcement builds confidence
-- **Small steps matter** - Breaking topics into chapters prevents overwhelm
-- **Questions are power** - Interactive learning deepens understanding
-- **Resources guide the way** - Curated materials support self-directed learning
-
-## 📄 License
-
-This app uses the RunAnywhere SDK and follows its license terms.
+# 🎓 StudyChamp - AI-Powered Study Companion
+
+<p align="center">
+  <img src="app/src/main/res/drawable/studychamp.png" alt="StudyChamp Logo" width="200"/>
+</p>
+
+<p align="center">
+  <strong>Your personal AI study companion with gamification, mentors, and offline learning</strong>
+</p>
+
+<p align="center">
+  <a href="#features">Features</a> •
+  <a href="#tech-stack">Tech Stack</a> •
+  <a href="#setup">Setup</a> •
+  <a href="#firebase-setup">Firebase Setup</a> •
+  <a href="#screenshots">Screenshots</a> •
+  <a href="#architecture">Architecture</a>
+</p>
 
 ---
 
-**Built with ❤️ for students who want to learn smarter, not harder!**
+## 🌟 Overview
 
-🌟 Happy Learning, Champ! 🌟
+**StudyChamp** is an advanced Android study application that combines AI-powered learning with
+gamification elements. Using the RunAnywhere SDK for offline AI capabilities, students can learn any
+subject with personalized mentors, earn XP, unlock achievements, and track their progress - all
+without requiring an internet connection for core features.
+
+## ✨ Features
+
+### 🤖 AI-Powered Learning
+
+- **Offline AI Model** using RunAnywhere SDK (local LLM execution)
+- **Streaming AI Responses** for real-time interaction
+- **Multiple Learning Styles**: Story-based, Resources, Definitions, Roadmap
+- **Context-Aware Responses** tailored to your learning needs
+
+### 🧙‍♂️ AI Mentor Personalities
+
+Choose your personal AI mentor with unique teaching styles:
+
+- **🧙‍♂️ Sensei** - Calm, philosophical, wisdom-focused
+- **⚡ Coach Max** - Energetic, motivational, enthusiastic
+- **🌸 Mira** - Gentle, story-driven, emotional and caring
+
+All AI responses adapt to match your mentor's personality!
+
+### 🎮 Complete Gamification System
+
+- **XP Points**: Earn 25 XP per correct quiz answer, 10 XP per mastered flashcard
+- **Level Progression**: 10 levels from beginner to champion (0 → 4000 XP)
+- **Daily Streaks**: Track consecutive study days with 🔥 indicator
+- **10 Unlockable Achievements**:
+    - 📝 Quiz Rookie (Complete 1 quiz) - 50 XP
+    - 🧠 Problem-Solving Pro (Score 100%) - 100 XP
+    - ⚔️ Concept Conqueror (Complete 5 topics) - 150 XP
+    - 🔥 3-Day Streak - 75 XP
+    - ⭐ Streak Star (7 days) - 200 XP
+    - 🃏 Flashcard Master (25 cards) - 120 XP
+    - 🌟 Rising Star (Level 5) - 250 XP
+    - 🏆 Champion Scholar (Level 10) - 500 XP
+    - 🎯 Quiz Marathon (10 quizzes) - 180 XP
+    - 💎 Perfect Week - 300 XP
+
+### 📝 AI-Generated Quizzes
+
+- **Real Educational Content** - Not generic study tips!
+- **Topic-Specific Questions** for Physics, Math, History, and more
+- **5 Questions per Quiz** with multiple-choice format
+- **Motivational Hints** for wrong answers
+- **Real-Time XP Tracking** shown in top bar
+- **Beautiful Completion Screen** with score and XP summary
+- **Automatic Firebase Sync** to save progress
+
+### 🃏 AI-Generated Flashcards
+
+- **5 Cards per Topic** with term and definition
+- **Swipeable Card UI** with smooth animations
+- **3D Flip Animation** to reveal answers
+- **Mastery Tracking** for each card
+- **10 XP per Mastered Card**
+- **Progress Indicators** and confetti on completion
+
+### 👤 Profile Management
+
+- **Create/Edit Profile** with name and email
+- **Real-Time Stats Display**:
+    - Current Level and Total XP
+    - Current Streak and Longest Streak
+    - Topics, Quizzes, and Flashcards Completed
+- **Profile Picture Support** (ready for implementation)
+- **Firebase Cloud Sync** for cross-device access
+
+### 🔥 Firebase Integration
+
+- **Anonymous Authentication** for instant access
+- **Cloud Firestore Database** for profile storage
+- **Real-Time Updates** using Flow
+- **Quiz History Tracking**
+- **Flashcard Progress Sync**
+- **Achievement Unlocking**
+- **Study Session Analytics**
+
+### 🎨 Beautiful UI/UX
+
+- **Material 3 Design** with purple theme
+- **Edge-to-Edge Display** (no white headers!)
+- **Smooth Animations** and transitions
+- **XP Pop-up Animations** when earning points
+- **Confetti Effects** on achievements
+- **Responsive Layouts** optimized for all screen sizes
+
+## 🛠 Tech Stack
+
+### Core Technologies
+
+- **Language**: Kotlin 100%
+- **UI Framework**: Jetpack Compose (Material 3)
+- **Architecture**: MVVM (Model-View-ViewModel)
+- **Async**: Coroutines + Flow
+- **Dependency Injection**: Manual (ready for Hilt)
+
+### AI & ML
+
+- **RunAnywhere SDK** v0.1.3-alpha
+    - Core SDK (4.01MB)
+    - LLM Module with llama.cpp
+    - 7 ARM64 CPU variants for optimization
+    - Offline AI execution
+
+### Firebase
+
+- **Firebase Authentication** (Anonymous + Email ready)
+- **Cloud Firestore** for real-time database
+- **Firebase Analytics** (configured)
+
+### Local Storage
+
+- **Room Database** 2.6.1
+    - User progress caching
+    - Quiz/Flashcard history
+    - Achievement tracking
+- **SharedPreferences** for app settings
+
+### Networking
+
+- **Ktor Client** 3.0.3
+- **OkHttp** 4.12.0
+- **Retrofit** 2.11.0
+
+### Serialization
+
+- **Kotlinx Serialization** 1.7.3
+- **Gson** 2.11.0
+
+### UI Libraries
+
+- **Compose BOM** (latest stable)
+- **Material Icons Extended**
+- **Core SplashScreen** 1.0.1
+
+## 📦 Setup
+
+### Prerequisites
+
+- **Android Studio** Hedgehog (2023.1.1) or newer
+- **JDK** 17 or higher
+- **Android SDK** API 24+ (Minimum) / API 36 (Target)
+- **Gradle** 8.2+
+
+### Installation Steps
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/AnshulAlgoS/StudyChamp.git
+   cd StudyChamp
+   ```
+
+2. **Open in Android Studio**
+    - File → Open → Select the project folder
+    - Wait for Gradle sync to complete
+
+3. **Add RunAnywhere SDK Libraries**
+
+   The app requires RunAnywhere SDK AAR files in `app/libs/`:
+    - `RunAnywhereKotlinSDK-release.aar` (4.01MB)
+    - `runanywhere-llm-llamacpp-release.aar` (2.12MB)
+
+   Download
+   from [RunAnywhere GitHub Releases v0.1.3-alpha](https://github.com/runanywhere/sdk/releases)
+
+4. **Firebase Setup** (See [Firebase Setup](#firebase-setup) section)
+
+5. **Build & Run**
+   ```bash
+   ./gradlew assembleDebug
+   ./gradlew installDebug
+   ```
+   Or use the ▶️ Run button in Android Studio
+
+## 🔥 Firebase Setup
+
+### 1. Enable Anonymous Authentication
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Select project: **studychamp-12bba**
+3. Navigate to: **Authentication** → **Sign-in method**
+4. Click **Anonymous** → **Enable** → **Save**
+
+### 2. Firestore Database Setup
+
+1. Go to **Firestore Database** in Firebase Console
+2. Click **Create Database**
+3. Choose **Production Mode** (or Test Mode for development)
+4. Select a region close to your users
+5. The app will automatically create these collections:
+    - `users` - User profiles
+    - `quiz_results` - Quiz history
+    - `flashcard_progress` - Flashcard tracking
+    - `achievements` - Unlocked achievements
+    - `study_sessions` - Session analytics
+
+### 3. Security Rules (Recommended)
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can read/write their own data
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Quiz results - user-specific
+    match /quiz_results/{resultId} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Flashcard progress - user-specific
+    match /flashcard_progress/{progressId} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Achievements - user-specific
+    match /achievements/{achievementId} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Study sessions - user-specific
+    match /study_sessions/{sessionId} {
+      allow read, write: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
+  }
+}
+```
+
+## 📸 Screenshots
+
+*Coming soon - Add screenshots of your app here!*
+
+## 🏗 Architecture
+
+### Project Structure
+
+```
+app/src/main/java/com/runanywhere/startup_hackathon20/
+├── MainActivity.kt                 # Main entry point with navigation
+├── MyApplication.kt               # Application class
+├── ChatViewModel.kt               # Legacy chat functionality
+├── StudyViewModel.kt              # Original study ViewModel
+├── EnhancedStudyViewModel.kt      # Enhanced with Room DB
+├── FirebaseStudyViewModel.kt      # ⭐ Main ViewModel with Firebase
+├── GamificationModels.kt          # XP, achievements, progress models
+├── FirebaseModels.kt              # Firebase-specific data models
+├── StudyModels.kt                 # Study journey data models
+├── database/
+│   ├── StudyChampDao.kt          # Room database DAOs
+│   └── StudyChampDatabase.kt     # Database configuration
+├── repository/
+│   ├── GamificationRepository.kt # Room operations
+│   └── FirebaseRepository.kt     # ⭐ Firebase operations
+└── ui/
+    ├── MentorSelectionScreen.kt  # Mentor choice UI
+    ├── QuizScreen.kt             # Quiz UI with animations
+    ├── FlashcardScreen.kt        # Flashcard swipe UI
+    ├── AchievementsAndProfile.kt # Achievements grid
+    ├── ProfileScreen.kt          # Profile management
+    └── theme/                    # Material 3 theme files
+```
+
+### Key Components
+
+#### FirebaseStudyViewModel
+
+Main ViewModel handling:
+
+- User authentication and profile management
+- AI quiz/flashcard generation
+- XP calculation and Firebase sync
+- Achievement checking and unlocking
+- Study journey orchestration
+
+#### FirebaseRepository
+
+Centralized Firebase operations:
+
+- User CRUD operations
+- Quiz/flashcard result saving
+- Real-time data streaming with Flow
+- Achievement tracking
+- Session analytics
+
+#### GamificationModels
+
+Data classes for:
+
+- `UserProgress` - XP, level, streaks
+- `Achievement` - Badges and rewards
+- `QuizData` & `FlashcardSet` - Learning content
+- `XPSystem` - Level calculation logic
+
+## 🚀 Usage
+
+### First Launch
+
+1. **App opens** → Automatic anonymous authentication
+2. **Profile Setup** → Enter your name (email optional)
+3. **Mentor Selection** → Choose your AI mentor
+4. **Home Screen** → Ready to learn!
+
+### Starting a Study Session
+
+1. Enter a **Subject** (e.g., "Physics")
+2. Enter **Topics** (e.g., "Newton's Laws, Gravitation")
+3. Tap **"Start My Study Journey"**
+4. Choose a **Learning Style** (Story/Resources/Definitions/Roadmap)
+5. Learn from AI-generated content
+
+### Taking Quizzes
+
+**Method 1**: Tap the **"📝 Take Quiz"** button after learning content
+**Method 2**: Type **"quiz"** in the chat input
+**Method 3**: Use the quiz card in the study journey
+
+- Answer 5 questions
+- Earn 25 XP per correct answer
+- See hints for wrong answers
+- View completion summary with total XP
+
+### Using Flashcards
+
+**Method 1**: Tap the **"🃏 Flashcards"** button
+**Method 2**: Type **"flashcards"** in the chat
+
+- Swipe through 5 cards
+- Tap to flip and see definitions
+- Mark cards as "Mastered"
+- Earn 10 XP per mastered card
+
+### Tracking Progress
+
+- **Profile Screen**: View your level, XP, streaks, and stats
+- **Achievements Screen**: See locked/unlocked achievements with requirements
+- **Profile HUD**: Quick stats displayed on home screen
+
+## 🎯 Roadmap
+
+### Coming Soon
+
+- [ ] More AI models support (GPT-4, Claude, Gemini)
+- [ ] Voice input/output for questions
+- [ ] Spaced repetition algorithm for flashcards
+- [ ] Study groups and leaderboards
+- [ ] Custom quiz creation
+- [ ] Dark mode support
+- [ ] Export study notes as PDF
+- [ ] Pomodoro timer integration
+- [ ] Calendar view for study sessions
+
+### Future Enhancements
+
+- [ ] Email/Google authentication
+- [ ] Social sharing of achievements
+- [ ] Weekly study reports
+- [ ] AI tutor video explanations
+- [ ] Collaborative study rooms
+- [ ] Parent/teacher dashboard
+- [ ] Offline mode improvements
+- [ ] Widget support
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 👨‍💻 Author
+
+**Anshul Saxena**
+
+- GitHub: [@AnshulAlgoS](https://github.com/AnshulAlgoS)
+- Project: [StudyChamp](https://github.com/AnshulAlgoS/StudyChamp)
+
+## 🙏 Acknowledgments
+
+- **RunAnywhere SDK** for offline AI capabilities
+- **Firebase** for cloud infrastructure
+- **Material Design 3** for beautiful UI components
+- **Jetpack Compose** team for modern Android UI toolkit
+- All open-source contributors whose libraries power this app
+
+## 📞 Support
+
+For issues, questions, or feature requests:
+
+- Open an [Issue](https://github.com/AnshulAlgoS/StudyChamp/issues)
+- Check existing [Discussions](https://github.com/AnshulAlgoS/StudyChamp/discussions)
+
+---
+
+<p align="center">
+  Made with ❤️ for students worldwide
+  <br>
+  <strong>Study Smart, Champion! 🎓🏆</strong>
+</p>
