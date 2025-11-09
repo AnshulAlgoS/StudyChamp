@@ -55,6 +55,9 @@ captures/
 # !.idea/compiler.xml
 # !.idea/runConfigurations.xml
 
+# ChatHistory files
+.idea/ChatHistory*.xml
+
 # Keystore files
 *.jks
 *.keystore
