@@ -956,7 +956,10 @@ Output in this exact JSON format:
                     _statusMessage.value = "Downloading: ${(progress * 100).toInt()}%"
                 }
                 _downloadProgress.value = null
-                _statusMessage.value = "Download complete! Now tap 'Load' to activate ✨"
+                _statusMessage.value = "Download complete! Now tap 'Load' to activate "
+
+                // Refresh model list to update UI with new download status
+                loadAvailableModels()
             } catch (e: Exception) {
                 _statusMessage.value = "Download failed: ${e.message}"
                 _downloadProgress.value = null

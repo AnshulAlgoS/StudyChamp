@@ -48,6 +48,7 @@ import com.runanywhere.startup_hackathon20.ui.*
 import com.runanywhere.startup_hackathon20.ui.theme.*
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.sp
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -236,118 +237,113 @@ fun BottomNavigationBar(
     currentScreen: AppScreen,
     onNavigate: (AppScreen) -> Unit
 ) {
-    Surface(
-        shadowElevation = 8.dp,
+    NavigationBar(
+        containerColor = Color.White,
+        contentColor = Color(0xFF4E6AF6),
         tonalElevation = 0.dp,
-        color = Color.White
+        modifier = Modifier
+            .fillMaxWidth()
     ) {
-        NavigationBar(
-            containerColor = Color.White,
-            contentColor = Color(0xFF4E6AF6),
-            tonalElevation = 0.dp,
-            modifier = Modifier.height(80.dp)
-        ) {
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        Icons.Default.Home,
-                        contentDescription = "Home",
-                        modifier = Modifier.size(28.dp)
-                    )
-                },
-                label = {
-                    Text(
-                        "Home",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                },
-                selected = currentScreen == AppScreen.HOME,
-                onClick = { onNavigate(AppScreen.HOME) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color.White,
-                    selectedTextColor = Color(0xFF4E6AF6),
-                    unselectedIconColor = Color(0xFF9E9E9E),
-                    unselectedTextColor = Color(0xFF9E9E9E),
-                    indicatorColor = Color(0xFF4E6AF6)
+        NavigationBarItem(
+            icon = {
+                Icon(
+                    Icons.Default.Home,
+                    contentDescription = "Home",
+                    modifier = Modifier.size(24.dp)
                 )
-            )
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        Icons.Default.DateRange,
-                        contentDescription = "Progress",
-                        modifier = Modifier.size(28.dp)
-                    )
-                },
-                label = {
-                    Text(
-                        "Progress",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                },
-                selected = currentScreen == AppScreen.ACHIEVEMENTS,
-                onClick = { onNavigate(AppScreen.ACHIEVEMENTS) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color.White,
-                    selectedTextColor = Color(0xFF4E6AF6),
-                    unselectedIconColor = Color(0xFF9E9E9E),
-                    unselectedTextColor = Color(0xFF9E9E9E),
-                    indicatorColor = Color(0xFF4E6AF6)
+            },
+            label = {
+                Text(
+                    "Home",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium
                 )
+            },
+            selected = currentScreen == AppScreen.HOME,
+            onClick = { onNavigate(AppScreen.HOME) },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = Color.White,
+                selectedTextColor = Color(0xFF4E6AF6),
+                unselectedIconColor = Color(0xFF9E9E9E),
+                unselectedTextColor = Color(0xFF9E9E9E),
+                indicatorColor = Color(0xFF4E6AF6)
             )
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        Icons.Default.PlayArrow,
-                        contentDescription = "Tasks",
-                        modifier = Modifier.size(28.dp)
-                    )
-                },
-                label = {
-                    Text(
-                        "Tasks",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                },
-                selected = currentScreen == AppScreen.MODELS,
-                onClick = { onNavigate(AppScreen.MODELS) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color.White,
-                    selectedTextColor = Color(0xFF4E6AF6),
-                    unselectedIconColor = Color(0xFF9E9E9E),
-                    unselectedTextColor = Color(0xFF9E9E9E),
-                    indicatorColor = Color(0xFF4E6AF6)
+        )
+        NavigationBarItem(
+            icon = {
+                Icon(
+                    Icons.Default.DateRange,
+                    contentDescription = "Progress",
+                    modifier = Modifier.size(24.dp)
                 )
-            )
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = "Profile",
-                        modifier = Modifier.size(28.dp)
-                    )
-                },
-                label = {
-                    Text(
-                        "Profile",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                },
-                selected = currentScreen == AppScreen.PROFILE,
-                onClick = { onNavigate(AppScreen.PROFILE) },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color.White,
-                    selectedTextColor = Color(0xFF4E6AF6),
-                    unselectedIconColor = Color(0xFF9E9E9E),
-                    unselectedTextColor = Color(0xFF9E9E9E),
-                    indicatorColor = Color(0xFF4E6AF6)
+            },
+            label = {
+                Text(
+                    "Progress",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium
                 )
+            },
+            selected = currentScreen == AppScreen.ACHIEVEMENTS,
+            onClick = { onNavigate(AppScreen.ACHIEVEMENTS) },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = Color.White,
+                selectedTextColor = Color(0xFF4E6AF6),
+                unselectedIconColor = Color(0xFF9E9E9E),
+                unselectedTextColor = Color(0xFF9E9E9E),
+                indicatorColor = Color(0xFF4E6AF6)
             )
-        }
+        )
+        NavigationBarItem(
+            icon = {
+                Icon(
+                    Icons.Default.PlayArrow,
+                    contentDescription = "Tasks",
+                    modifier = Modifier.size(24.dp)
+                )
+            },
+            label = {
+                Text(
+                    "Tasks",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium
+                )
+            },
+            selected = currentScreen == AppScreen.MODELS,
+            onClick = { onNavigate(AppScreen.MODELS) },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = Color.White,
+                selectedTextColor = Color(0xFF4E6AF6),
+                unselectedIconColor = Color(0xFF9E9E9E),
+                unselectedTextColor = Color(0xFF9E9E9E),
+                indicatorColor = Color(0xFF4E6AF6)
+            )
+        )
+        NavigationBarItem(
+            icon = {
+                Icon(
+                    Icons.Default.Person,
+                    contentDescription = "Profile",
+                    modifier = Modifier.size(24.dp)
+                )
+            },
+            label = {
+                Text(
+                    "Profile",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium
+                )
+            },
+            selected = currentScreen == AppScreen.PROFILE,
+            onClick = { onNavigate(AppScreen.PROFILE) },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = Color.White,
+                selectedTextColor = Color(0xFF4E6AF6),
+                unselectedIconColor = Color(0xFF9E9E9E),
+                unselectedTextColor = Color(0xFF9E9E9E),
+                indicatorColor = Color(0xFF4E6AF6)
+            )
+        )
     }
 }
 // ... existing code ...
@@ -479,7 +475,10 @@ fun HomeScreen(
                             focusedContainerColor = Color.White,
                             unfocusedContainerColor = Color.White,
                             focusedBorderColor = Color.Transparent,
-                            unfocusedBorderColor = Color.Transparent
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            cursorColor = Color(0xFF4E6AF6)
                         ),
                         shape = RoundedCornerShape(16.dp),
                         singleLine = true,
@@ -652,7 +651,10 @@ fun HomeScreen(
                                 focusedContainerColor = Color(0xFFF5F5F7),
                                 unfocusedContainerColor = Color(0xFFF5F5F7),
                                 focusedBorderColor = Color(0xFF4E6AF6),
-                                unfocusedBorderColor = Color.Transparent
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black,
+                                cursorColor = Color(0xFF4E6AF6)
                             ),
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -704,7 +706,10 @@ fun HomeScreen(
                                 focusedContainerColor = Color(0xFFF5F5F7),
                                 unfocusedContainerColor = Color(0xFFF5F5F7),
                                 focusedBorderColor = Color(0xFF4E6AF6),
-                                unfocusedBorderColor = Color.Transparent
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black,
+                                cursorColor = Color(0xFF4E6AF6)
                             ),
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -1113,7 +1118,11 @@ fun StudyJourneyScreen(
                             focusedBorderColor = Color(0xFF4E6AF6),
                             unfocusedBorderColor = Color.Transparent,
                             disabledContainerColor = Color(0xFFF5F5F7),
-                            disabledBorderColor = Color.Transparent
+                            disabledBorderColor = Color.Transparent,
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            disabledTextColor = Color.Black,
+                            cursorColor = Color(0xFF4E6AF6)
                         )
                     )
                     IconButton(
@@ -1724,12 +1733,12 @@ fun CleanModelCard(
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
                     )
-                    if (isLoaded) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        if (isLoaded) {
                             Icon(
                                 Icons.Default.CheckCircle,
                                 contentDescription = null,
@@ -1742,6 +1751,26 @@ fun CleanModelCard(
                                 color = Color(0xFF2E7D32),
                                 fontWeight = FontWeight.Medium
                             )
+                        } else if (model.isDownloaded) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = Color(0xFF4E6AF6),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Downloaded",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF4E6AF6),
+                                fontWeight = FontWeight.Medium
+                            )
+                        } else {
+                            Text(
+                                text = "Not downloaded",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray,
+                                fontWeight = FontWeight.Normal
+                            )
                         }
                     }
                 }
@@ -1753,49 +1782,68 @@ fun CleanModelCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Button(
-                    onClick = onDownload,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp),
-                    enabled = !model.isDownloaded && !isLoading,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4E6AF6),
-                        disabledContainerColor = Color(0xFFE0E0E0)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        if (model.isDownloaded) Icons.Default.CheckCircle else Icons.Default.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        if (model.isDownloaded) "Downloaded" else "Download",
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-
-                Button(
-                    onClick = onLoad,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(44.dp),
-                    enabled = model.isDownloaded && !isLoaded && !isLoading,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFC107),
-                        disabledContainerColor = Color(0xFFE0E0E0)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Star,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Load", fontWeight = FontWeight.Medium)
+                if (model.isDownloaded) {
+                    // Show only Load button when downloaded
+                    Button(
+                        onClick = onLoad,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        enabled = !isLoaded && !isLoading,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (!isLoaded && !isLoading) Color(0xFF4E6AF6) else Color(
+                                0xFFE0E0E0
+                            ),
+                            contentColor = Color.White,
+                            disabledContainerColor = Color(0xFFE0E0E0),
+                            disabledContentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            if (isLoaded) Icons.Default.CheckCircle else Icons.Default.Star,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (isLoaded) "Loaded" else "Load Model",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = Color.White
+                        )
+                    }
+                } else {
+                    // Show only Download button when not downloaded
+                    Button(
+                        onClick = onDownload,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        enabled = !isLoading,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (!isLoading) Color(0xFFFFC107) else Color(0xFFE0E0E0),
+                            contentColor = Color.White,
+                            disabledContainerColor = Color(0xFFE0E0E0),
+                            disabledContentColor = Color.White
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Download Model",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = Color.White
+                        )
+                    }
                 }
             }
         }

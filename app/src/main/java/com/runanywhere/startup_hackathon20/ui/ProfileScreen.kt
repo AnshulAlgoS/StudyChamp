@@ -244,14 +244,24 @@ fun EditProfileDialog(
                     onValueChange = { name = it },
                     label = { Text("Name") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        cursorColor = Color(0xFF4E6AF6)
+                    )
                 )
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("Email (Optional)") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        cursorColor = Color(0xFF4E6AF6)
+                    )
                 )
             }
         },
@@ -313,7 +323,12 @@ fun ProfileSetupScreen(
                 placeholder = { Text("e.g., Alex") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.Person, "Name") }
+                leadingIcon = { Icon(Icons.Default.Person, "Name") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    cursorColor = Color(0xFF4E6AF6)
+                )
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -325,7 +340,12 @@ fun ProfileSetupScreen(
                 placeholder = { Text("your@email.com") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.Email, "Email") }
+                leadingIcon = { Icon(Icons.Default.Email, "Email") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    cursorColor = Color(0xFF4E6AF6)
+                )
             )
 
             Spacer(modifier = Modifier.height(32.dp))
