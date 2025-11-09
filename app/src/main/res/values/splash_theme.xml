@@ -3,7 +3,7 @@
     <!-- Splash Screen Theme -->
     <style name="Theme.StudyChamp.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/studychamp</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splashscreen</item>
         <item name="windowSplashScreenAnimationDuration">1000</item>
         <item name="postSplashScreenTheme">@style/Theme.Startup_hackathon20</item>
     </style>

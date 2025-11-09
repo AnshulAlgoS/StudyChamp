@@ -196,39 +196,43 @@ fun AchievementsScreen(
 ) {
     val unlockedCount = achievements.count { it.isUnlocked }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Achievements 🏆") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Gold,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F5F7))
+    ) {
+        // Floating Back Button
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier
+                .padding(start = 20.dp, top = 24.dp)
+                .size(48.dp)
+                .background(
+                    color = Color.White.copy(alpha = 0.92f),
+                    shape = CircleShape
                 )
+                .align(Alignment.TopStart)
+        ) {
+            Icon(
+                Icons.Default.ArrowBack,
+                contentDescription = "Back",
+                tint = Color(0xFF4E6AF6)
             )
-        },
-        containerColor = LightBackground
-    ) { padding ->
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .padding(horizontal = 16.dp)
         ) {
+            Spacer(modifier = Modifier.height(80.dp))
+
             // Summary card
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Yellow80
-                ),
-                shape = RoundedCornerShape(20.dp)
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -239,32 +243,28 @@ fun AchievementsScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Achievements Unlocked",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Gold
+                            text = "Achievements",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
                         )
                         Text(
-                            text = "$unlockedCount of ${achievements.size}",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Gold
+                            text = "$unlockedCount of ${achievements.size} unlocked",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color(0xFFFFC107)
                         )
                     }
 
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(CircleShape)
-                            .background(CardLight),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "🏆",
-                            style = MaterialTheme.typography.displayMedium
-                        )
-                    }
+                    Icon(
+                        Icons.Default.Star,
+                        contentDescription = null,
+                        tint = Color(0xFFFFC107),
+                        modifier = Modifier.size(48.dp)
+                    )
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Grid of achievements
             LazyVerticalGrid(

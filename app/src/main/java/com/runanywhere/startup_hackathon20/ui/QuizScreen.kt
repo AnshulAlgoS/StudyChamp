@@ -40,53 +40,60 @@ fun QuizScreen(
     val currentQuestion = quizData.questions.getOrNull(currentQuestionIndex)
     val totalXPEarned = correctAnswersCount * 25 // 25 XP per correct answer
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Quiz: ${quizData.topic}") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Back")
-                    }
-                },
-                actions = {
-                    // Show current XP earned
-                    Surface(
-                        color = Gold.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(text = "⭐", style = MaterialTheme.typography.titleSmall)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "$totalXPEarned XP",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = Gold
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Purple40,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
-        },
-        containerColor = LightBackground
-    ) { padding ->
-        Box(
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F5F7))
+    ) {
+        // Floating Back Button
+        IconButton(
+            onClick = onBack,
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+                .padding(start = 20.dp, top = 24.dp)
+                .size(48.dp)
+                .background(
+                    color = Color.White.copy(alpha = 0.92f),
+                    shape = CircleShape
+                )
+                .align(Alignment.TopStart)
         ) {
+            Icon(
+                Icons.Default.ArrowBack,
+                contentDescription = "Back",
+                tint = Color(0xFF4E6AF6)
+            )
+        }
+
+        // XP Badge - floating top right
+        Surface(
+            color = Color(0xFFFFF3E0),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 24.dp, end = 20.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    Icons.Default.Star,
+                    contentDescription = null,
+                    tint = Color(0xFFFFC107),
+                    modifier = Modifier.size(18.dp)
+                )
+                Text(
+                    text = "$totalXPEarned XP",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFFFC107)
+                )
+            }
+        }
+
+        Column(modifier = Modifier.fillMaxSize()) {
             if (showCompletionScreen) {
-                // Quiz completion summary
                 QuizCompletionScreen(
                     correctAnswers = correctAnswersCount,
                     totalQuestions = quizData.questions.size,
@@ -97,67 +104,81 @@ fun QuizScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(20.dp),
-                    verticalArrangement = Arrangement.SpaceBetween
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Progress indicator
-                    Column {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Question ${currentQuestionIndex + 1}/${quizData.questions.size}",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Purple40
-                            )
-                            Text(
-                                text = "✓ $correctAnswersCount correct",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = SuccessGreen
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        LinearProgressIndicator(
-                            progress = { (currentQuestionIndex + 1).toFloat() / quizData.questions.size },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp),
-                            color = Purple40,
-                            trackColor = Purple80,
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // Question card
+                    // Progress Card
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = CardLight
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                        elevation = CardDefaults.cardElevation(8.dp)
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(0.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(24.dp)
-                        ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Question ${currentQuestionIndex + 1}/${quizData.questions.size}",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black
+                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = Color(0xFF4CAF50),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = "$correctAnswersCount correct",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF4CAF50)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            LinearProgressIndicator(
+                                progress = { (currentQuestionIndex + 1).toFloat() / quizData.questions.size },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp),
+                                color = Color(0xFF4E6AF6),
+                                trackColor = Color(0xFFE0E0E0),
+                            )
+                        }
+                    }
+
+                    // Question Card
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(20.dp),
+                        elevation = CardDefaults.cardElevation(0.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(24.dp)) {
+                            Icon(
+                                Icons.Default.Info,
+                                contentDescription = null,
+                                tint = Color(0xFF4E6AF6),
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
                             Text(
                                 text = currentQuestion.question,
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = Purple40,
-                                textAlign = TextAlign.Start
+                                color = Color.Black
                             )
                         }
                     }
-
-                    Spacer(modifier = Modifier.height(24.dp))
 
                     // Options
                     Column(
@@ -165,7 +186,7 @@ fun QuizScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         currentQuestion.options.forEach { option ->
-                            OptionButton(
+                            CleanOptionButton(
                                 option = option,
                                 isSelected = selectedAnswer == option,
                                 isCorrect = option == currentQuestion.answer,
@@ -179,46 +200,41 @@ fun QuizScreen(
                         }
                     }
 
-                    // Hint card (shown after wrong answer)
+                    // Hint Card
                     AnimatedVisibility(
                         visible = showHint,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
+                        enter = fadeIn() + expandVertically()
                     ) {
                         Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Yellow80
-                            ),
-                            shape = RoundedCornerShape(16.dp)
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0)),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(0.dp)
                         ) {
                             Row(
                                 modifier = Modifier.padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 Icon(
                                     Icons.Default.Info,
                                     contentDescription = null,
-                                    tint = Gold,
+                                    tint = Color(0xFFFFC107),
                                     modifier = Modifier.size(24.dp)
                                 )
-                                Spacer(modifier = Modifier.width(12.dp))
                                 Text(
                                     text = currentQuestion.hint,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = Gold
+                                    color = Color(0xFF424242)
                                 )
                             }
                         }
                     }
 
-                    // Action button
+                    // Action Button
                     Button(
                         onClick = {
                             if (isAnswerSubmitted) {
-                                // Move to next question
                                 if (currentQuestionIndex < quizData.questions.size - 1) {
                                     currentQuestionIndex++
                                     selectedAnswer = null
@@ -226,11 +242,9 @@ fun QuizScreen(
                                     showHint = false
                                     showXPAnimation = false
                                 } else {
-                                    // Quiz complete - show summary
                                     showCompletionScreen = true
                                 }
                             } else {
-                                // Submit answer
                                 if (selectedAnswer != null) {
                                     isAnswerSubmitted = true
                                     val isCorrect = selectedAnswer == currentQuestion.answer
@@ -245,17 +259,20 @@ fun QuizScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(60.dp),
+                            .height(56.dp),
                         enabled = selectedAnswer != null,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isAnswerSubmitted) Teal40 else Purple40
+                            containerColor = if (isAnswerSubmitted) Color(0xFF4CAF50) else Color(
+                                0xFF4E6AF6
+                            ),
+                            disabledContainerColor = Color(0xFFE0E0E0)
                         ),
                         shape = RoundedCornerShape(16.dp)
                     ) {
                         Text(
                             text = when {
-                                isAnswerSubmitted && currentQuestionIndex < quizData.questions.size - 1 -> "Next Question →"
-                                isAnswerSubmitted -> "See Results 🎉"
+                                isAnswerSubmitted && currentQuestionIndex < quizData.questions.size - 1 -> "Next Question"
+                                isAnswerSubmitted -> "See Results"
                                 else -> "Submit Answer"
                             },
                             style = MaterialTheme.typography.titleMedium,
@@ -265,15 +282,74 @@ fun QuizScreen(
                 }
             }
 
-            // XP animation overlay
+            // XP Animation
             AnimatedVisibility(
                 visible = showXPAnimation,
                 enter = fadeIn() + scaleIn(),
                 exit = fadeOut() + scaleOut(),
-                modifier = Modifier.align(Alignment.Center)
+                modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 XPRewardAnimation(xpAmount = 25)
             }
+        }
+    }
+}
+
+@Composable
+fun CleanOptionButton(
+    option: String,
+    isSelected: Boolean,
+    isCorrect: Boolean,
+    isAnswerSubmitted: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor = when {
+        isAnswerSubmitted && isCorrect -> Color(0xFFE8F5E9)
+        isAnswerSubmitted && isSelected && !isCorrect -> Color(0xFFFFEBEE)
+        isSelected -> Color(0xFFE3F2FD)
+        else -> Color.White
+    }
+
+    val borderColor = when {
+        isAnswerSubmitted && isCorrect -> Color(0xFF4CAF50)
+        isAnswerSubmitted && isSelected && !isCorrect -> Color(0xFFF44336)
+        isSelected -> Color(0xFF4E6AF6)
+        else -> Color.Transparent
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        shape = RoundedCornerShape(16.dp),
+        border = androidx.compose.foundation.BorderStroke(
+            width = if (borderColor != Color.Transparent) 2.dp else 0.dp,
+            color = borderColor
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (isAnswerSubmitted) {
+                Icon(
+                    imageVector = if (isCorrect) Icons.Default.CheckCircle else if (isSelected) Icons.Default.Clear else Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = if (isCorrect) Color(0xFF4CAF50) else if (isSelected) Color(0xFFF44336) else Color.Transparent,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            Text(
+                text = option,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                color = Color.Black,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }
@@ -313,7 +389,7 @@ fun QuizCompletionScreen(
             text = "Quiz Complete!",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
-            color = Purple40
+            color = Color.Black
         )
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -322,10 +398,10 @@ fun QuizCompletionScreen(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = SuccessGreen.copy(alpha = 0.15f)
+                containerColor = Color(0xFFE8F5E9)
             ),
             shape = RoundedCornerShape(20.dp),
-            elevation = CardDefaults.cardElevation(8.dp)
+            elevation = CardDefaults.cardElevation(0.dp)
         ) {
             Column(
                 modifier = Modifier.padding(32.dp),
@@ -335,7 +411,7 @@ fun QuizCompletionScreen(
                     text = performanceMessage,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = SuccessGreen
+                    color = Color(0xFF4CAF50)
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -345,12 +421,12 @@ fun QuizCompletionScreen(
                     text = "$correctAnswers / $totalQuestions",
                     style = MaterialTheme.typography.displayLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Purple40
+                    color = Color.Black
                 )
                 Text(
                     text = "Correct Answers",
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = Color(0xFF424242)
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -370,12 +446,12 @@ fun QuizCompletionScreen(
                             text = "+$xpEarned XP Earned!",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
-                            color = Gold
+                            color = Color(0xFFFFC107)
                         )
                         Text(
                             text = "Saving to your profile...",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = Color(0xFF424242)
                         )
                     }
                 }
@@ -391,7 +467,7 @@ fun QuizCompletionScreen(
                 .fillMaxWidth()
                 .height(60.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Purple40
+                containerColor = Color(0xFF4E6AF6)
             ),
             shape = RoundedCornerShape(16.dp)
         ) {
@@ -399,72 +475,6 @@ fun QuizCompletionScreen(
                 text = "Continue Learning",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
-            )
-        }
-    }
-}
-
-@Composable
-fun OptionButton(
-    option: String,
-    isSelected: Boolean,
-    isCorrect: Boolean,
-    isAnswerSubmitted: Boolean,
-    onClick: () -> Unit
-) {
-    val backgroundColor = when {
-        isAnswerSubmitted && isCorrect -> SuccessGreen.copy(alpha = 0.3f)
-        isAnswerSubmitted && isSelected && !isCorrect -> ErrorRed.copy(alpha = 0.3f)
-        isSelected -> Purple80
-        else -> CardLight
-    }
-
-    val borderColor = when {
-        isAnswerSubmitted && isCorrect -> SuccessGreen
-        isAnswerSubmitted && isSelected && !isCorrect -> ErrorRed
-        isSelected -> Purple40
-        else -> Color.Transparent
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick,
-        colors = CardDefaults.cardColors(
-            containerColor = backgroundColor
-        ),
-        shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            width = if (borderColor != Color.Transparent) 3.dp else 0.dp,
-            color = borderColor
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 8.dp else 4.dp
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Icon
-            if (isAnswerSubmitted) {
-                if (isCorrect || isSelected) {
-                    Icon(
-                        imageVector = if (isCorrect) Icons.Default.CheckCircle else Icons.Default.Clear,
-                        contentDescription = null,
-                        tint = if (isCorrect) SuccessGreen else ErrorRed,
-                        modifier = Modifier.size(28.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                }
-            }
-
-            Text(
-                text = option,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                modifier = Modifier.weight(1f)
             )
         }
     }
@@ -496,8 +506,8 @@ fun XPRewardAnimation(xpAmount: Int = 25) {
             .background(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        Yellow60.copy(alpha = alpha.value),
-                        Gold.copy(alpha = alpha.value * 0.5f),
+                        Color(0xFFFFF3E0).copy(alpha = alpha.value),
+                        Color(0xFFFFC107).copy(alpha = alpha.value * 0.5f),
                         Color.Transparent
                     )
                 ),
@@ -517,7 +527,7 @@ fun XPRewardAnimation(xpAmount: Int = 25) {
                 text = "+$xpAmount XP",
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
-                color = Gold
+                color = Color(0xFFFFC107)
             )
         }
     }

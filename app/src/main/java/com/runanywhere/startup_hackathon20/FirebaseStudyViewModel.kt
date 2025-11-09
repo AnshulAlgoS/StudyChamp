@@ -13,8 +13,8 @@ import com.runanywhere.startup_hackathon20.repository.FirebaseRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.Serializable
 import kotlin.Result
 
 /**
@@ -219,29 +219,42 @@ class FirebaseStudyViewModel(application: Application) : AndroidViewModel(applic
             try {
                 val mentorContext = _currentMentor.value
                 val prompt = """
-You are creating a quiz about "$topic" in $subject.
+You are creating a quiz to test knowledge about "$topic" in $subject.
 
-Create exactly 5 multiple-choice questions that test knowledge about $topic.
+IMPORTANT: All questions must be directly about $topic content, concepts, definitions, or applications.
+DO NOT ask questions about study methods, note-taking, or general learning tips.
+
+Create exactly 5 multiple-choice questions that test understanding of $topic.
 Each question must:
-- Be directly related to $topic concepts
+- Be specifically about $topic (NOT about how to study)
+- Test knowledge of concepts, facts, formulas, or applications
 - Have 4 options labeled A, B, C, D
 - Have exactly one correct answer
-- Include a helpful hint for wrong answers
+- Include a helpful hint related to $topic
 
-Return ONLY valid JSON in this exact format, no markdown:
+Return ONLY valid JSON in this exact format (no markdown, no code blocks):
 {
   "topic": "$topic",
   "questions": [
     {
-      "question": "What is Newton's First Law of Motion?",
-      "options": ["An object at rest stays at rest unless acted upon by force", "F=ma", "Every action has equal opposite reaction", "Gravity pulls objects down"],
-      "answer": "An object at rest stays at rest unless acted upon by force",
-      "hint": "Think about inertia - objects resist changes in motion!"
+      "question": "What is the specific concept/definition/formula in $topic?",
+      "options": ["Correct answer about $topic", "Wrong answer", "Wrong answer", "Wrong answer"],
+      "answer": "Correct answer about $topic",
+      "hint": "Hint explaining the concept in $topic"
     }
   ]
 }
 
-Now create 5 questions about $topic in $subject:
+Examples of GOOD questions for Physics/Newton's Laws:
+- "What does Newton's First Law state?"
+- "What is the formula for Newton's Second Law?"
+
+Examples of BAD questions to AVOID:
+- "How should you study effectively?"
+- "Should we study from notes or textbooks?"
+- "What is the best way to memorize?"
+
+Now create 5 questions specifically about $topic in $subject:
                 """.trimIndent()
 
                 android.util.Log.d("FirebaseStudyVM", "Sending quiz prompt for: $topic in $subject")
@@ -257,7 +270,7 @@ Now create 5 questions about $topic in $subject:
                 )
                 android.util.Log.d(
                     "FirebaseStudyVM",
-                    "AI Response preview: ${fullResponse.take(200)}"
+                    "AI Response preview: ${fullResponse.take(300)}"
                 )
 
                 // Parse JSON response
@@ -583,62 +596,62 @@ Now create 5 questions about $topic in $subject:
             }
 
             else -> {
-                // Generic but educational questions that mention the topic
+                // Generic but topic-specific questions
                 listOf(
                     QuizQuestion(
-                        question = "What is a key principle or concept in $topic?",
+                        question = "What is $topic primarily about in $subject?",
                         options = listOf(
-                            "Understanding fundamental relationships and patterns",
+                            "Core concepts and fundamental principles of $topic",
+                            "Memorizing random facts",
+                            "Only historical dates",
+                            "Unrelated information"
+                        ),
+                        answer = "Core concepts and fundamental principles of $topic",
+                        hint = "Focus on the main ideas that define $topic! "
+                    ),
+                    QuizQuestion(
+                        question = "Which of these is a key component or principle in $topic?",
+                        options = listOf(
+                            "Understanding the fundamental relationships in $topic",
                             "Ignoring all examples",
-                            "Memorizing without comprehension",
-                            "Avoiding all practice"
+                            "Avoiding practice",
+                            "Random guessing"
                         ),
-                        answer = "Understanding fundamental relationships and patterns",
-                        hint = "Look for the core concepts that connect everything in $topic! "
+                        answer = "Understanding the fundamental relationships in $topic",
+                        hint = "Think about what makes $topic work! "
                     ),
                     QuizQuestion(
-                        question = "In $subject, $topic is most closely related to:",
+                        question = "When applying $topic concepts, what's most important?",
                         options = listOf(
-                            "Core principles and their applications",
-                            "Unrelated random facts",
-                            "Only abstract theory",
-                            "No practical use"
+                            "Understanding how $topic principles work together",
+                            "Just memorizing terms",
+                            "Skipping foundational concepts",
+                            "Avoiding real examples"
                         ),
-                        answer = "Core principles and their applications",
-                        hint = "Connect theory to real-world applications! "
+                        answer = "Understanding how $topic principles work together",
+                        hint = "Concepts in $topic connect to form a bigger picture! "
                     ),
                     QuizQuestion(
-                        question = "What makes $topic important in $subject?",
+                        question = "What makes $topic relevant in $subject?",
                         options = listOf(
-                            "It provides foundation for advanced concepts",
-                            "It has no importance",
-                            "It's only for tests",
+                            "It forms the foundation for understanding $subject",
+                            "It has no real application",
+                            "It's only theoretical with no use",
                             "It's completely optional"
                         ),
-                        answer = "It provides foundation for advanced concepts",
-                        hint = "Basics build the foundation for everything else! "
+                        answer = "It forms the foundation for understanding $subject",
+                        hint = "$topic is a building block in $subject! "
                     ),
                     QuizQuestion(
-                        question = "A practical example of $topic in $subject would involve:",
+                        question = "To demonstrate understanding of $topic, you would need to:",
                         options = listOf(
-                            "Real-world problem solving",
-                            "No practical applications",
-                            "Only theoretical discussions",
-                            "Avoiding examples"
+                            "Explain key concepts and solve related problems in $topic",
+                            "Only recite definitions",
+                            "Avoid any practical application",
+                            "Skip all examples"
                         ),
-                        answer = "Real-world problem solving",
-                        hint = "Think about how this applies in real life! "
-                    ),
-                    QuizQuestion(
-                        question = "To master $topic, you should focus on:",
-                        options = listOf(
-                            "Understanding core concepts and practicing problems",
-                            "Just reading without doing",
-                            "Skipping difficult parts",
-                            "Memorizing everything verbatim"
-                        ),
-                        answer = "Understanding core concepts and practicing problems",
-                        hint = "Active learning with practice is most effective! "
+                        answer = "Explain key concepts and solve related problems in $topic",
+                        hint = "True understanding comes from applying $topic knowledge! "
                     )
                 )
             }

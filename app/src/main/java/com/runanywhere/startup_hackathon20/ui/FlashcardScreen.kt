@@ -5,6 +5,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -37,70 +38,89 @@ fun FlashcardScreen(
     val currentCard = flashcardSet.cards.getOrNull(currentCardIndex)
     val progress = (currentCardIndex + 1).toFloat() / flashcardSet.cards.size
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Flashcards: ${flashcardSet.topic}") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Teal40,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
-            )
-        },
-        containerColor = LightBackground
-    ) { padding ->
-        Box(
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F5F7))
+    ) {
+        // Floating Back Button
+        IconButton(
+            onClick = onBack,
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
+                .padding(start = 20.dp, top = 24.dp)
+                .size(48.dp)
+                .background(
+                    color = Color.White.copy(alpha = 0.92f),
+                    shape = CircleShape
+                )
+                .align(Alignment.TopStart)
         ) {
+            Icon(
+                Icons.Default.ArrowBack,
+                contentDescription = "Back",
+                tint = Color(0xFF4E6AF6)
+            )
+        }
+
+        Column(modifier = Modifier.fillMaxSize()) {
             if (currentCard != null) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(20.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Progress
-                    Row(
+                    // Progress Card
+                    Card(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(0.dp)
                     ) {
-                        Text(
-                            text = "Card ${currentCardIndex + 1}/${flashcardSet.cards.size}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Teal40
-                        )
-                        Text(
-                            text = "Mastered: ${masteredCards.size}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = SuccessGreen
-                        )
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Card ${currentCardIndex + 1}/${flashcardSet.cards.size}",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black
+                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = Color(0xFF4CAF50),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        text = "Mastered: ${masteredCards.size}",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF4CAF50)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            LinearProgressIndicator(
+                                progress = { progress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp),
+                                color = Color(0xFF4E6AF6),
+                                trackColor = Color(0xFFE0E0E0),
+                            )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(8.dp),
-                        color = Teal40,
-                        trackColor = Teal80,
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    // Flashcard with flip
+                    // Flashcard
                     FlippableCard(
                         term = currentCard.term,
                         definition = currentCard.definition,
@@ -109,24 +129,19 @@ fun FlashcardScreen(
                             .weight(1f)
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
                     // Instructions
                     Text(
-                        text = "Tap card to flip • Use buttons to navigate",
+                        text = "Tap card to flip",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = Color.Gray,
                         textAlign = TextAlign.Center
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Action buttons
+                    // Action Buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Still Learning
                         OutlinedButton(
                             onClick = {
                                 if (currentCardIndex < flashcardSet.cards.size - 1) {
@@ -135,19 +150,27 @@ fun FlashcardScreen(
                                     onComplete(masteredCards.size)
                                 }
                             },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(16.dp)
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = Color(0xFF4E6AF6)
+                            )
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(vertical = 8.dp)
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Icon(Icons.Default.KeyboardArrowRight, null)
-                                Text("Still Learning")
+                                Icon(
+                                    Icons.Default.KeyboardArrowRight,
+                                    null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text("Still Learning", style = MaterialTheme.typography.labelMedium)
                             }
                         }
 
-                        // Mark as Mastered
                         Button(
                             onClick = {
                                 masteredCards.add(currentCardIndex)
@@ -158,24 +181,33 @@ fun FlashcardScreen(
                                     onComplete(masteredCards.size)
                                 }
                             },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(56.dp),
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = SuccessGreen
+                                containerColor = Color(0xFF4CAF50)
                             ),
                             shape = RoundedCornerShape(16.dp)
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(vertical = 8.dp)
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                Icon(Icons.Default.CheckCircle, null)
-                                Text("Mastered!")
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    "Mastered!",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
                     }
                 }
             } else {
-                // All done
                 CompletionCard(
                     masteredCount = masteredCards.size,
                     totalCards = flashcardSet.cards.size,
@@ -183,7 +215,6 @@ fun FlashcardScreen(
                 )
             }
 
-            // Confetti animation
             if (showConfetti) {
                 ConfettiAnimation()
             }
@@ -219,10 +250,10 @@ fun FlippableCard(
                 cameraDistance = 12f * density
             },
         colors = CardDefaults.cardColors(
-            containerColor = if (rotation > 90f) Purple80 else Teal80
+            containerColor = Color.White
         ),
         shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(12.dp)
+        elevation = CardDefaults.cardElevation(2.dp)
     ) {
         Box(
             modifier = Modifier
@@ -236,23 +267,25 @@ fun FlippableCard(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        text = "📚",
-                        style = MaterialTheme.typography.displayLarge
+                    Icon(
+                        Icons.Default.Info,
+                        contentDescription = null,
+                        tint = Color(0xFF4E6AF6),
+                        modifier = Modifier.size(48.dp)
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                     Text(
                         text = term,
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
-                        color = Teal40
+                        color = Color.Black
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "Tap to see definition",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = Color.Gray
                     )
                 }
             } else {
@@ -262,16 +295,18 @@ fun FlippableCard(
                     verticalArrangement = Arrangement.Center,
                     modifier = Modifier.graphicsLayer { rotationY = 180f }
                 ) {
-                    Text(
-                        text = "✨",
-                        style = MaterialTheme.typography.displayLarge
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = Color(0xFF4CAF50),
+                        modifier = Modifier.size(48.dp)
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                     Text(
                         text = definition,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = MaterialTheme.typography.titleLarge,
                         textAlign = TextAlign.Center,
-                        color = Purple40
+                        color = Color(0xFF424242)
                     )
                 }
             }
@@ -292,27 +327,56 @@ fun CompletionCard(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = "🎉",
-            style = MaterialTheme.typography.displayLarge,
-            modifier = Modifier.padding(16.dp)
+        Icon(
+            Icons.Default.CheckCircle,
+            contentDescription = null,
+            tint = Color(0xFF4CAF50),
+            modifier = Modifier.size(80.dp)
         )
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         Text(
             text = "Flashcards Complete!",
-            style = MaterialTheme.typography.displaySmall,
+            style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
-            color = SuccessGreen,
+            color = Color.Black,
             textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            text = "You mastered $masteredCount out of $totalCards cards!",
-            style = MaterialTheme.typography.titleLarge,
-            textAlign = TextAlign.Center
-        )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(0.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "You mastered",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF424242),
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "$masteredCount / $totalCards",
+                    style = MaterialTheme.typography.displayMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF4CAF50)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "cards!",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color(0xFF424242)
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -320,9 +384,9 @@ fun CompletionCard(
             onClick = onDone,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(60.dp),
+                .height(56.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = SuccessGreen
+                containerColor = Color(0xFF4E6AF6)
             ),
             shape = RoundedCornerShape(16.dp)
         ) {

@@ -1,5 +1,6 @@
 package com.runanywhere.startup_hackathon20.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -42,44 +43,63 @@ fun FirebaseProfileScreen(
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("My Profile 👤") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showEditDialog = true }) {
-                        Icon(Icons.Default.Edit, "Edit Profile")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Purple40,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
-                    actionIconContentColor = Color.White
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F5F7))
+    ) {
+        // Floating Back Button
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier
+                .padding(start = 20.dp, top = 24.dp)
+                .size(48.dp)
+                .background(
+                    color = Color.White.copy(alpha = 0.92f),
+                    shape = androidx.compose.foundation.shape.CircleShape
                 )
+                .align(Alignment.TopStart)
+        ) {
+            Icon(
+                Icons.Default.ArrowBack,
+                contentDescription = "Back",
+                tint = Color(0xFF4E6AF6)
             )
-        },
-        containerColor = LightBackground
-    ) { padding ->
+        }
+
+        // Floating Edit Button
+        IconButton(
+            onClick = { showEditDialog = true },
+            modifier = Modifier
+                .padding(end = 20.dp, top = 24.dp)
+                .size(48.dp)
+                .background(
+                    color = Color.White.copy(alpha = 0.92f),
+                    shape = androidx.compose.foundation.shape.CircleShape
+                )
+                .align(Alignment.TopEnd)
+        ) {
+            Icon(
+                Icons.Default.Edit,
+                contentDescription = "Edit",
+                tint = Color(0xFF4E6AF6)
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Spacer(modifier = Modifier.height(64.dp))
+
             // Profile Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = Purple80
-                ),
-                shape = RoundedCornerShape(16.dp)
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(20.dp),
@@ -89,13 +109,13 @@ fun FirebaseProfileScreen(
                         text = userProfile.name.ifEmpty { "Champion" },
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Purple40
+                        color = Color.Black
                     )
                     if (userProfile.email.isNotEmpty()) {
                         Text(
                             text = userProfile.email,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = Color.Gray
                         )
                     }
 
@@ -111,25 +131,37 @@ fun FirebaseProfileScreen(
                                 text = "Level ${userProfile.level}",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
-                                color = Gold
+                                color = Color(0xFFFFC107)
                             )
                             Text(
                                 text = "${userProfile.totalXP} XP",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = Teal40
+                                color = Color(0xFF4E6AF6)
                             )
                         }
 
                         Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                text = "🔥 ${userProfile.currentStreak} day streak",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Favorite,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFF5252),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    text = "${userProfile.currentStreak} day streak",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black
+                                )
+                            }
                             Text(
                                 text = "Best: ${userProfile.longestStreak} days",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = Color.Gray
                             )
                         }
                     }
@@ -139,10 +171,9 @@ fun FirebaseProfileScreen(
             // Stats Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = CardLight
-                ),
-                shape = RoundedCornerShape(16.dp)
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(0.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(20.dp),
@@ -152,7 +183,7 @@ fun FirebaseProfileScreen(
                         text = "Activity Stats",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = Purple40
+                        color = Color.Black
                     )
 
                     StatRow("Topics Completed", "${userProfile.topicsCompleted}", "📚")
@@ -164,15 +195,17 @@ fun FirebaseProfileScreen(
             // Change Mentor button
             Button(
                 onClick = onChangeMentor,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Teal40
+                    containerColor = Color(0xFF4E6AF6)
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
             ) {
                 Icon(Icons.Default.Person, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Change Mentor")
+                Text("Change Mentor", fontWeight = FontWeight.Bold)
             }
         }
     }
@@ -325,28 +358,33 @@ fun ProfileLoadingScreen(
     onBack: () -> Unit,
     onRetry: () -> Unit
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Profile") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Back")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Purple40,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F5F7))
+    ) {
+        // Floating Back Button
+        IconButton(
+            onClick = onBack,
+            modifier = Modifier
+                .padding(start = 20.dp, top = 24.dp)
+                .size(48.dp)
+                .background(
+                    color = Color.White.copy(alpha = 0.92f),
+                    shape = androidx.compose.foundation.shape.CircleShape
                 )
+                .align(Alignment.TopStart)
+        ) {
+            Icon(
+                Icons.Default.ArrowBack,
+                contentDescription = "Back",
+                tint = Color(0xFF4E6AF6)
             )
-        },
-        containerColor = LightBackground
-    ) { padding ->
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
