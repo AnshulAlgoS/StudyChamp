@@ -2,8 +2,13 @@ package com.runanywhere.startup_hackathon20.ui
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -16,12 +21,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.runanywhere.startup_hackathon20.*
 import com.runanywhere.startup_hackathon20.ui.theme.*
 import kotlinx.coroutines.launch
@@ -187,94 +196,167 @@ fun StatItem(emoji: String, value: String, label: String) {
     }
 }
 
-// Achievements Screen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AchievementsScreen(
-    achievements: List<Achievement>,
-    onBack: () -> Unit
-) {
-    val unlockedCount = achievements.count { it.isUnlocked }
+fun AchievementsScreen(viewModel: com.runanywhere.startup_hackathon20.FirebaseStudyViewModel) {
+    val userProfile by viewModel.userProfile.collectAsState()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F5F7))
+    Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFF5F7FA)) {
+        userProfile?.let { profile ->
+            FuturisticAchievementsDashboard(
+                userLevel = profile.level,
+                userXP = profile.totalXP,
+                totalQuizzesTaken = profile.quizzesCompleted,
+                quizAccuracy = 85,
+                studyStreak = profile.currentStreak,
+                topicsMastered = profile.topicsCompleted
+            )
+        } ?: run {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = Color(0xFF4E6AF6))
+            }
+        }
+    }
+}
+
+@Composable
+fun FuturisticAchievementsDashboard(
+    userLevel: Int,
+    userXP: Int,
+    totalQuizzesTaken: Int,
+    quizAccuracy: Int,
+    studyStreak: Int,
+    topicsMastered: Int
+) {
+    val xpForCurrentLevel = (userLevel - 1) * 100
+    val xpForNextLevel = userLevel * 100
+    val currentLevelProgress = userXP - xpForCurrentLevel
+    val xpNeededForNextLevel = xpForNextLevel - userXP
+    val progress = currentLevelProgress.toFloat() / (xpForNextLevel - xpForCurrentLevel).toFloat()
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(20.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // Floating Back Button
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier
-                .padding(start = 20.dp, top = 24.dp)
-                .size(48.dp)
-                .background(
-                    color = Color.White.copy(alpha = 0.92f),
-                    shape = CircleShape
-                )
-                .align(Alignment.TopStart)
-        ) {
-            Icon(
-                Icons.Default.ArrowBack,
-                contentDescription = "Back",
-                tint = Color(0xFF4E6AF6)
+        item {
+            ProgressAndLevelsPanel(
+                level = userLevel,
+                currentXP = userXP,
+                nextLevelXP = xpForNextLevel,
+                xpNeeded = xpNeededForNextLevel,
+                progress = progress.coerceIn(0f, 1f)
             )
         }
 
+        item {
+            BadgesGrid(
+                totalQuizzes = totalQuizzesTaken,
+                accuracy = quizAccuracy,
+                streak = studyStreak,
+                topicsMastered = topicsMastered
+            )
+        }
+
+        item {
+            RecordsSection(
+                longestStreak = studyStreak,
+                highestAccuracy = quizAccuracy,
+                topicsMastered = topicsMastered,
+                mentorBondLevel = userLevel / 3 + 1
+            )
+        }
+    }
+}
+
+@Composable
+fun ProgressAndLevelsPanel(
+    level: Int,
+    currentXP: Int,
+    nextLevelXP: Int,
+    xpNeeded: Int,
+    progress: Float
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(80.dp))
-
-            // Summary card
-            Card(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(20.dp),
-                elevation = CardDefaults.cardElevation(0.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Achievements",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
-                        Text(
-                            text = "$unlockedCount of ${achievements.size} unlocked",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color(0xFFFFC107)
-                        )
-                    }
-
-                    Icon(
-                        Icons.Default.Star,
-                        contentDescription = null,
-                        tint = Color(0xFFFFC107),
-                        modifier = Modifier.size(48.dp)
+                Column {
+                    Text(
+                        "Level $level",
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF4E6AF6)
+                    )
+                    Text(
+                        "Scholar Tier",
+                        fontSize = 16.sp,
+                        color = Color(0xFF6B7280),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        "$currentXP XP",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF1F2937)
+                    )
+                    Text(
+                        "of $nextLevelXP",
+                        fontSize = 14.sp,
+                        color = Color(0xFF9CA3AF)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Grid of achievements
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 16.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(20.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFFE5E7EB))
             ) {
-                items(achievements) { achievement ->
-                    AchievementCard(achievement)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress)
+                        .fillMaxHeight()
+                        .background(
+                            Brush.horizontalGradient(
+                                colors = listOf(Color(0xFF4E6AF6), Color(0xFF7C3AED))
+                            )
+                        )
+                        .animateContentSize()
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFEEF2FF)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("🎯", fontSize = 18.sp)
+                    Text(
+                        "$xpNeeded XP to Level ${level + 1}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF4E6AF6)
+                    )
                 }
             }
         }
@@ -282,42 +364,117 @@ fun AchievementsScreen(
 }
 
 @Composable
-fun AchievementCard(achievement: Achievement) {
-    val scale by animateFloatAsState(
-        targetValue = if (achievement.isUnlocked) 1f else 0.95f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
-        label = "scale"
+fun BadgesGrid(totalQuizzes: Int, accuracy: Int, streak: Int, topicsMastered: Int) {
+    val badges = listOf(
+        Badge(
+            "quiz_master",
+            "Quiz Master",
+            "Take 10 quizzes",
+            totalQuizzes >= 10,
+            com.runanywhere.startup_hackathon20.R.drawable.quizmaster
+        ),
+        Badge(
+            "daily_streak_10",
+            "10-Day Warrior",
+            "10-day study streak",
+            streak >= 10,
+            com.runanywhere.startup_hackathon20.R.drawable.tenday
+        ),
+        Badge(
+            "flashcard_pro",
+            "Flashcard Pro",
+            "Master 50 flashcards",
+            topicsMastered >= 5,
+            com.runanywhere.startup_hackathon20.R.drawable.flashcard
+        ),
+        Badge(
+            "topic_slayer",
+            "Topic Slayer",
+            "Complete 10 topics",
+            topicsMastered >= 10,
+            com.runanywhere.startup_hackathon20.R.drawable.topicslayer
+        ),
+        Badge(
+            "sensei_apprentice",
+            "Sensei's Apprentice",
+            "Study 20 sessions",
+            totalQuizzes >= 5,
+            com.runanywhere.startup_hackathon20.R.drawable.senseis
+        ),
+        Badge(
+            "accuracy_king",
+            "Accuracy King",
+            "90%+ quiz accuracy",
+            accuracy >= 90,
+            com.runanywhere.startup_hackathon20.R.drawable.accuracyking
+        ),
+        Badge(
+            "xp_collector",
+            "XP Collector",
+            "Earn 500 XP",
+            true,
+            com.runanywhere.startup_hackathon20.R.drawable.xpcollector
+        ),
+        Badge(
+            "night_owl",
+            "Night Owl",
+            "Study after midnight",
+            false,
+            com.runanywhere.startup_hackathon20.R.drawable.nightowl
+        ),
+        Badge(
+            "early_bird",
+            "Early Bird",
+            "Study before 7 AM",
+            false,
+            com.runanywhere.startup_hackathon20.R.drawable.earlybird
+        )
     )
 
-    // Get requirement text based on achievement ID
-    val requirementText = when (achievement.id) {
-        "first_quiz" -> "Complete 1 quiz"
-        "problem_solver" -> "Score 100% on any quiz"
-        "concept_conqueror" -> "Complete 5 topics"
-        "streak_3" -> "Study for 3 days in a row"
-        "streak_7" -> "Study for 7 days in a row"
-        "flashcard_master" -> "Master 25 flashcards"
-        "level_5" -> "Reach Level 5 (1000 XP)"
-        "level_10" -> "Reach Level 10 (4000 XP)"
-        "quiz_marathon" -> "Complete 10 quizzes"
-        "perfect_week" -> "Study every day for a week"
-        else -> "Complete the challenge"
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            "🏅 Achievements",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1F2937)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.height(450.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(badges) { badge ->
+                BadgeCard(badge)
+            }
+        }
     }
+}
+
+data class Badge(
+    val id: String,
+    val name: String,
+    val description: String,
+    val unlocked: Boolean,
+    val imageRes: Int
+)
+
+@Composable
+fun BadgeCard(badge: Badge) {
+    var showDialog by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(1f),
+            .aspectRatio(1f)
+            .clickable { showDialog = true },
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (achievement.isUnlocked)
-                SuccessGreen.copy(alpha = 0.15f)
-            else
-                CardLight
+            containerColor = if (badge.unlocked) Color.White else Color(0xFFF9FAFB)
         ),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (achievement.isUnlocked) 8.dp else 2.dp
-        )
+        elevation = CardDefaults.cardElevation(if (badge.unlocked) 4.dp else 1.dp),
+        border = if (badge.unlocked) BorderStroke(2.dp, Color(0xFF4E6AF6)) else null
     ) {
         Box(
             modifier = Modifier
@@ -330,107 +487,168 @@ fun AchievementCard(achievement: Achievement) {
                 verticalArrangement = Arrangement.Center,
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Emoji
-                Text(
-                    text = achievement.emoji,
-                    style = MaterialTheme.typography.displayMedium,
-                    modifier = Modifier.alpha(if (achievement.isUnlocked) 1f else 0.3f)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Title
-                Text(
-                    text = achievement.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                    color = if (achievement.isUnlocked)
-                        SuccessGreen
-                    else
-                        Purple40,
-                    modifier = Modifier.alpha(if (achievement.isUnlocked) 1f else 0.7f),
-                    maxLines = 2
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // Description
-                Text(
-                    text = achievement.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.alpha(if (achievement.isUnlocked) 1f else 0.6f),
-                    maxLines = 2,
-                    fontSize = MaterialTheme.typography.bodySmall.fontSize * 0.9f
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Requirement text (if not unlocked)
-                if (!achievement.isUnlocked) {
-                    Text(
-                        text = "📍 $requirementText",
-                        style = MaterialTheme.typography.labelSmall,
-                        textAlign = TextAlign.Center,
-                        color = Teal40,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 2,
-                        modifier = Modifier.padding(horizontal = 4.dp)
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                }
-
-                // XP reward
-                Surface(
-                    color = if (achievement.isUnlocked) Gold.copy(alpha = 0.2f)
-                    else MaterialTheme.colorScheme.surfaceVariant,
-                    shape = RoundedCornerShape(8.dp)
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .alpha(if (badge.unlocked) 1f else 0.3f)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        if (achievement.isUnlocked) {
-                            Text(
-                                text = "✓",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = Gold
+                    Image(
+                        painter = painterResource(id = badge.imageRes),
+                        contentDescription = badge.name,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    if (!badge.unlocked) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.White.copy(alpha = 0.7f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = Color(0xFF9CA3AF),
+                                modifier = Modifier.size(24.dp)
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
                         }
-                        Text(
-                            text = "${achievement.xpReward} XP",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = if (achievement.isUnlocked) Gold else Color.Gray
-                        )
                     }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    badge.name,
+                    fontSize = 11.sp,
+                    color = if (badge.unlocked) Color(0xFF1F2937) else Color(0xFF9CA3AF),
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    fontWeight = if (badge.unlocked) FontWeight.SemiBold else FontWeight.Normal,
+                    lineHeight = 14.sp
+                )
             }
+        }
+    }
 
-            // Locked overlay
-            if (!achievement.isUnlocked) {
-                Icon(
-                    Icons.Default.Lock,
-                    contentDescription = "Locked",
-                    tint = Color.Gray.copy(alpha = 0.3f),
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            containerColor = Color.White,
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = badge.imageRes),
+                        contentDescription = null,
+                        modifier = Modifier.size(40.dp)
+                    )
+                    Text(
+                        badge.name,
+                        color = Color(0xFF1F2937),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        badge.description,
+                        color = Color(0xFF6B7280)
+                    )
+                    if (badge.unlocked) {
+                        Surface(
+                            color = Color(0xFFEEF2FF),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                "✅ Unlocked! +50 XP",
+                                modifier = Modifier.padding(12.dp),
+                                color = Color(0xFF4E6AF6),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    } else {
+                        Surface(
+                            color = Color(0xFFF3F4F6),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                "🔒 Keep learning to unlock!",
+                                modifier = Modifier.padding(12.dp),
+                                color = Color(0xFF6B7280)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Close", color = Color(0xFF4E6AF6))
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun RecordsSection(longestStreak: Int, highestAccuracy: Int, topicsMastered: Int, mentorBondLevel: Int) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            "🕰️ Your Records",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF1F2937)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            RecordCard("🔥", "Longest Study Streak", "$longestStreak days", Color(0xFFEF4444))
+            RecordCard("🎯", "Highest Quiz Accuracy", "$highestAccuracy%", Color(0xFF10B981))
+            RecordCard("📚", "Total Topics Mastered", "$topicsMastered topics", Color(0xFF8B5CF6))
+            RecordCard("🤝", "AI Mentor Bond Level", "Level $mentorBondLevel", Color(0xFF4E6AF6))
+        }
+    }
+}
+
+@Composable
+fun RecordCard(icon: String, title: String, value: String, accentColor: Color) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .size(20.dp)
-                )
-            } else {
-                // Unlocked checkmark
-                Icon(
-                    Icons.Default.CheckCircle,
-                    contentDescription = "Unlocked",
-                    tint = SuccessGreen,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .size(20.dp)
+                        .size(48.dp)
+                        .background(accentColor.copy(alpha = 0.1f), CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(icon, fontSize = 24.sp)
+                }
+                Text(
+                    title,
+                    fontSize = 15.sp,
+                    color = Color(0xFF6B7280),
+                    fontWeight = FontWeight.Medium
                 )
             }
+            Text(
+                value,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = accentColor
+            )
         }
     }
 }

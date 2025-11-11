@@ -201,11 +201,7 @@ fun StudyChampApp(viewModel: FirebaseStudyViewModel = viewModel()) {
                     )
 
                     AppScreen.ACHIEVEMENTS -> {
-                        val achievements by viewModel.achievements.collectAsState()
-                        AchievementsScreen(
-                            achievements = achievements,
-                            onBack = { currentScreen = AppScreen.HOME }
-                        )
+                        AchievementsScreen(viewModel = viewModel)
                     }
 
                     AppScreen.PROFILE -> {
