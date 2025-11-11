@@ -1195,14 +1195,42 @@ Use your unique teaching style and personality.
     }
 
     private suspend fun generateStoryContent(subject: String, topics: String) {
-        val prompt =
-            "${_currentMentor.value.intro}\n\nExplain $topics in $subject using a simple real-world analogy or story. Be ${_currentMentor.value.tone}. Under 150 words."
+        // Use AI Brain mentor personality
+        val mentorPersonality = getAIBrainMentorPersonality()
+        val localUserId = "local_user"
+        val userContext = memoryStorage.loadUserContext(localUserId)
+
+        // Build adaptive prompt
+        val systemPrompt = if (userContext != null) {
+            mentorPersonality.getSystemPrompt(userContext)
+        } else {
+            mentorPersonality.basePrompt
+        }
+
+        val prompt = """
+$systemPrompt
+
+Now, explain $topics in $subject using a simple real-world analogy or story.
+Use your unique teaching style and personality. Keep it under 150 words.
+        """.trimIndent()
 
         var response = ""
         RunAnywhere.generateStream(prompt).collect { token ->
             response += token
             updateStreamingMessage(response)
         }
+
+        // Save to memory
+        val sentiment = SentimentAnalyzer.analyzeSentiment("story about $topics")
+        memoryStorage.addMemorySnapshot(
+            MemorySnapshot(
+                timestamp = System.currentTimeMillis(),
+                topic = subject,
+                userQuery = "Explain $topics with a story",
+                aiResponse = response,
+                sentiment = sentiment
+            )
+        )
     }
 
     private suspend fun showResourcesContent(subject: String, topics: String) {
@@ -1211,25 +1239,81 @@ Use your unique teaching style and personality.
     }
 
     private suspend fun generateDefinitions(subject: String, topics: String) {
-        val prompt =
-            "Define the 3 most important terms in $topics for $subject. Be ${_currentMentor.value.tone}. Each definition: 2-3 sentences."
+        // Use AI Brain mentor personality
+        val mentorPersonality = getAIBrainMentorPersonality()
+        val localUserId = "local_user"
+        val userContext = memoryStorage.loadUserContext(localUserId)
+
+        // Build adaptive prompt
+        val systemPrompt = if (userContext != null) {
+            mentorPersonality.getSystemPrompt(userContext)
+        } else {
+            mentorPersonality.basePrompt
+        }
+
+        val prompt = """
+$systemPrompt
+
+Now, define the 3 most important terms in $topics for $subject.
+Use your unique teaching style. Each definition should be 2-3 sentences and easy to understand.
+        """.trimIndent()
 
         var response = ""
         RunAnywhere.generateStream(prompt).collect { token ->
             response += token
             updateStreamingMessage(response)
         }
+
+        // Save to memory
+        val sentiment = SentimentAnalyzer.analyzeSentiment("definitions for $topics")
+        memoryStorage.addMemorySnapshot(
+            MemorySnapshot(
+                timestamp = System.currentTimeMillis(),
+                topic = subject,
+                userQuery = "Define key terms in $topics",
+                aiResponse = response,
+                sentiment = sentiment
+            )
+        )
     }
 
     private suspend fun generateRoadmap(subject: String, topics: String) {
-        val prompt =
-            "For $topics in $subject, create a simple 3-week learning roadmap. List key concepts for each week. Be ${_currentMentor.value.tone}."
+        // Use AI Brain mentor personality
+        val mentorPersonality = getAIBrainMentorPersonality()
+        val localUserId = "local_user"
+        val userContext = memoryStorage.loadUserContext(localUserId)
+
+        // Build adaptive prompt
+        val systemPrompt = if (userContext != null) {
+            mentorPersonality.getSystemPrompt(userContext)
+        } else {
+            mentorPersonality.basePrompt
+        }
+
+        val prompt = """
+$systemPrompt
+
+Now, create a simple 3-week learning roadmap for $topics in $subject.
+List key concepts for each week using your unique teaching style and personality.
+        """.trimIndent()
 
         var response = ""
         RunAnywhere.generateStream(prompt).collect { token ->
             response += token
             updateStreamingMessage(response)
         }
+
+        // Save to memory
+        val sentiment = SentimentAnalyzer.analyzeSentiment("roadmap for $topics")
+        memoryStorage.addMemorySnapshot(
+            MemorySnapshot(
+                timestamp = System.currentTimeMillis(),
+                topic = subject,
+                userQuery = "Create learning roadmap for $topics",
+                aiResponse = response,
+                sentiment = sentiment
+            )
+        )
     }
 
     private fun updateStreamingMessage(content: String) {
