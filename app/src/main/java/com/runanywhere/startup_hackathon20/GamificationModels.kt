@@ -117,7 +117,8 @@ data class MentorProfile(
     val intro: String,
     val tone: String,
     val description: String,
-    val color: String // hex color for UI
+    val color: String, // hex color for UI
+    val voiceId: String = id // Voice ID for TTS (same as mentor id by default)
 )
 
 // ===== PREDEFINED MENTORS =====
@@ -126,33 +127,36 @@ object Mentors {
         id = "sensei",
         name = "Sensei",
         emoji = "🧙‍♂️",
-        style = "calm",
-        intro = "Welcome, Champ. Today, we focus the mind before the challenge.",
-        tone = "philosophical and calm, use metaphors and wisdom",
-        description = "Calm, philosophical, wise teacher",
-        color = "#7E22CE" // Purple
+        style = "philosophical",
+        intro = "Welcome, young scholar. Consider this: The journey of a thousand miles begins with understanding a single step.",
+        tone = "philosophical and contemplative, use wisdom, metaphors from nature and the cosmos",
+        description = "Philosophical mentor who teaches through wisdom and deep reflection",
+        color = "#7E22CE", // Purple
+        voiceId = "sensei"
     )
 
     val COACH_MAX = MentorProfile(
         id = "coach_max",
         name = "Coach Max",
         emoji = "⚡",
-        style = "energetic",
-        intro = "Let's GO, Champ! Time to crush this and level up your skills!",
-        tone = "energetic, motivational, and enthusiastic",
-        description = "Energetic, motivational coach",
-        color = "#F59E0B" // Yellow/Gold
+        style = "friendly",
+        intro = "Hey there, champ! I'm so excited to learn and grow with you on this journey together!",
+        tone = "warm, friendly, and supportive - emphasize mutual growth and partnership",
+        description = "Friendly growth buddy who learns alongside you",
+        color = "#F59E0B", // Yellow/Gold
+        voiceId = "coach_max"
     )
 
     val MIRA = MentorProfile(
         id = "mira",
         name = "Mira",
-        emoji = "🌸",
-        style = "gentle",
-        intro = "Hi there, Champ. Let's take this one step at a time, together.",
-        tone = "gentle, story-driven, emotional and caring",
-        description = "Gentle, story-driven guide",
-        color = "#14B8A6" // Teal
+        emoji = "🧚‍♀️",
+        style = "storyteller",
+        intro = "✨ Hello, dear friend! Let me tell you a magical tale about the wonders we'll discover together! 🌟",
+        tone = "magical fairy who tells enchanting stories, use fairy-tale language and whimsical imagery",
+        description = "Magical fairy who transforms learning into enchanting adventures",
+        color = "#14B8A6", // Teal
+        voiceId = "mira"
     )
 
     fun getAll() = listOf(SENSEI, COACH_MAX, MIRA)

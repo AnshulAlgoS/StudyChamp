@@ -87,9 +87,9 @@ fun MentorSelectionScreen(
                 MentorCardWithAvatar(
                     mentorId = "sensei",
                     name = "Sensei",
-                    tagline = "The Wise Guide",
-                    description = "Patient • Thoughtful • Uses Analogies",
-                    personality = "Teaches through questions and guided discovery. Perfect for deep understanding.",
+                    tagline = "The Philosophical Guide",
+                    description = "Calm • Contemplative • Uses Wisdom & Metaphors",
+                    personality = "Teaches through philosophical questions and deep insights. Uses nature metaphors and ancient wisdom to illuminate understanding. Perfect for reflective learners.",
                     imageRes = R.drawable.sensei,
                     accentColor = Color(0xFF6366F1),
                     isSelected = selectedMentor == "sensei",
@@ -104,9 +104,9 @@ fun MentorSelectionScreen(
                 MentorCardWithAvatar(
                     mentorId = "coach_max",
                     name = "Coach Max",
-                    tagline = "The Motivator",
-                    description = "Energetic • Enthusiastic • Challenge-Focused",
-                    personality = "Frames learning as exciting challenges. Great for staying motivated!",
+                    tagline = "The Growth Buddy",
+                    description = "Friendly • Supportive • Grows With You",
+                    personality = "Learns alongside you like a best friend! Emphasizes partnership and mutual growth. Great for collaborative learners who want a supportive companion.",
                     imageRes = R.drawable.coachmax,
                     accentColor = Color(0xFFEF4444),
                     isSelected = selectedMentor == "coach_max",
@@ -121,9 +121,9 @@ fun MentorSelectionScreen(
                 MentorCardWithAvatar(
                     mentorId = "mira",
                     name = "Mira",
-                    tagline = "The Storyteller",
-                    description = "Creative • Friendly • Story-Driven",
-                    personality = "Makes learning magical with stories and scenarios. Perfect for creative minds!",
+                    tagline = "The Fairy Storyteller",
+                    description = "Magical • Creative • Story-Weaver",
+                    personality = "A whimsical fairy who transforms every lesson into enchanting tales! Makes abstract concepts come alive through magical stories. Perfect for imaginative minds!",
                     imageRes = R.drawable.mira,
                     accentColor = Color(0xFF8B5CF6),
                     isSelected = selectedMentor == "mira",
@@ -518,8 +518,8 @@ fun MentorCardWithAvatar(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                StyleChip("🧘 Calm", accentColor, isSelected)
-                                StyleChip("🤔 Reflective", accentColor, isSelected)
+                                StyleChip("🧘 Contemplative", accentColor, isSelected)
+                                StyleChip("🌿 Wisdom", accentColor, isSelected)
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(
@@ -527,7 +527,7 @@ fun MentorCardWithAvatar(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                StyleChip("🎯 Focused", accentColor, isSelected)
+                                StyleChip("🔮 Philosophical", accentColor, isSelected)
                             }
                         }
 
@@ -537,7 +537,8 @@ fun MentorCardWithAvatar(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                StyleChip("⚡ High Energy", accentColor, isSelected)
+                                StyleChip("🤝 Partnership", accentColor, isSelected)
+                                StyleChip("💚 Supportive", accentColor, isSelected)
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(
@@ -545,8 +546,7 @@ fun MentorCardWithAvatar(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                StyleChip("🏆 Goal-Driven", accentColor, isSelected)
-                                StyleChip("💪 Motivating", accentColor, isSelected)
+                                StyleChip("🌱 Grows With You", accentColor, isSelected)
                             }
                         }
 
@@ -556,8 +556,8 @@ fun MentorCardWithAvatar(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                StyleChip("✨ Creative", accentColor, isSelected)
-                                StyleChip("📖 Story-Based", accentColor, isSelected)
+                                StyleChip("✨ Magical", accentColor, isSelected)
+                                StyleChip("📖 Storyteller", accentColor, isSelected)
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(
@@ -565,7 +565,7 @@ fun MentorCardWithAvatar(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.Start),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                StyleChip("🎨 Imaginative", accentColor, isSelected)
+                                StyleChip("🧚‍♀️ Fairy Tales", accentColor, isSelected)
                             }
                         }
                     }
