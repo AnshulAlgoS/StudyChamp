@@ -1,21 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Background gradient matching the splash screen -->
-    <item>
-        <shape android:shape="rectangle">
-            <gradient
-                android:angle="135"
-                android:startColor="#7E22CE"
-                android:centerColor="#9333EA"
-                android:endColor="#D97706"
-                android:type="linear" />
-        </shape>
-    </item>
-
-    <!-- Center the splash screen image -->
+    <!-- Full screen splashscreen.png image -->
     <item>
         <bitmap
             android:src="@drawable/splashscreen"
-            android:gravity="center" />
+            android:gravity="fill" />
     </item>
 </layer-list>
