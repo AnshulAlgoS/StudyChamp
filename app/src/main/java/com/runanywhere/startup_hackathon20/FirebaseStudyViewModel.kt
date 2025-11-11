@@ -10,6 +10,7 @@ import com.runanywhere.sdk.public.RunAnywhere
 import com.runanywhere.sdk.public.extensions.listAvailableModels
 import com.runanywhere.sdk.models.ModelInfo
 import com.runanywhere.startup_hackathon20.repository.FirebaseRepository
+import com.runanywhere.startup_hackathon20.ai.*
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -18,12 +19,17 @@ import kotlinx.serialization.Serializable
 import kotlin.Result
 
 /**
- * Firebase-integrated StudyViewModel with complete gamification system
+ * Firebase-integrated StudyViewModel with complete gamification system + AI Brain
  */
 class FirebaseStudyViewModel(application: Application) : AndroidViewModel(application) {
 
     private val firebaseRepo = FirebaseRepository()
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+
+    // ===== AI BRAIN INTEGRATION =====
+    private val memoryStorage = LocalMemoryStorage(application)
+    private val memoryContextBuilder = MemoryContextBuilder(memoryStorage)
+    private val adaptiveBehaviorEngine = AdaptiveBehaviorEngine()
 
     // ===== USER & AUTH STATE =====
     private val _currentUserId = MutableStateFlow<String?>(null)
@@ -96,6 +102,51 @@ class FirebaseStudyViewModel(application: Application) : AndroidViewModel(applic
     init {
         checkAuthAndLoadProfile()
         loadAvailableModels()
+        initializeAIBrain()
+    }
+
+    // ===== AI BRAIN INITIALIZATION =====
+
+    private fun initializeAIBrain() {
+        viewModelScope.launch {
+            val userId = "local_user" // Use local ID for offline storage
+
+            // Check if user context exists, if not create it
+            var userContext = memoryStorage.loadUserContext(userId)
+            if (userContext == null) {
+                // Create initial learning context
+                userContext = UserLearningContext(
+                    userId = userId,
+                    personalityAffinity = "sensei",
+                    learningRate = "moderate",
+                    recentAccuracy = 0.7f,
+                    currentMood = "neutral"
+                )
+                memoryStorage.saveUserContext(userContext)
+                android.util.Log.d("AIBrain", "Created initial user context")
+            } else {
+                android.util.Log.d("AIBrain", "Loaded existing user context")
+            }
+        }
+    }
+
+    // ===== HELPER: Get AI Brain Mentor Personality =====
+
+    private fun getAIBrainMentorPersonality(): MentorPersonality {
+        val userId = "local_user"
+        val userContext = memoryStorage.loadUserContext(userId) ?: UserLearningContext(
+            userId = userId,
+            personalityAffinity = _currentMentor.value.id,
+            learningRate = "moderate",
+            recentAccuracy = 0.7f
+        )
+
+        return when (_currentMentor.value.id) {
+            "sensei" -> MentorPersonality.getSensei(userContext)
+            "coach_max" -> MentorPersonality.getCoachMax(userContext)
+            "mira" -> MentorPersonality.getMira(userContext)
+            else -> MentorPersonality.getSensei(userContext)
+        }
     }
 
     // ===== AUTHENTICATION & USER MANAGEMENT =====
@@ -157,12 +208,32 @@ class FirebaseStudyViewModel(application: Application) : AndroidViewModel(applic
 
                         // Load achievements
                         loadAchievements(userId)
+
+                        // Update AI Brain with user stats
+                        updateAIBrainContext(profile)
                     } else {
                         // Profile doesn't exist - this is a new user
                         // Will be created when user sets their name
                     }
                 }
             }
+        }
+    }
+
+    private fun updateAIBrainContext(profile: UserProfile) {
+        viewModelScope.launch {
+            val userId = "local_user"
+            var context =
+                memoryStorage.loadUserContext(userId) ?: UserLearningContext(userId = userId)
+
+            // Update context with Firebase profile data
+            context = context.copy(
+                totalXP = profile.totalXP,
+                streakDays = profile.currentStreak,
+                personalityAffinity = profile.selectedMentor
+            )
+
+            memoryStorage.saveUserContext(context)
         }
     }
 
@@ -200,6 +271,17 @@ class FirebaseStudyViewModel(application: Application) : AndroidViewModel(applic
             val userId = _currentUserId.value ?: return@launch
             _currentMentor.value = Mentors.getById(mentorId)
             firebaseRepo.updateUserProfile(userId, mapOf("selectedMentor" to mentorId))
+
+            // Update AI Brain memory with new mentor
+            val localUserId = "local_user"
+            val context = memoryStorage.loadUserContext(localUserId)
+            if (context != null) {
+                memoryStorage.saveUserContext(context.copy(personalityAffinity = mentorId))
+            }
+
+            android.util.Log.d("AIBrain", "Mentor changed to: ${_currentMentor.value.name}")
+            _statusMessage.value =
+                "Your mentor ${_currentMentor.value.name} is ready to guide you! "
         }
     }
 
@@ -217,7 +299,7 @@ class FirebaseStudyViewModel(application: Application) : AndroidViewModel(applic
             _currentTopic.value = topic
 
             try {
-                val mentorContext = _currentMentor.value
+                val mentorContext = getAIBrainMentorPersonality()
                 val prompt = """
 You are creating a quiz to test knowledge about "$topic" in $subject.
 
@@ -736,6 +818,7 @@ Now create 5 questions specifically about $topic in $subject:
             _currentTopic.value = topic
 
             try {
+                val mentorContext = getAIBrainMentorPersonality()
                 val prompt = """
 Generate 5 flashcards for learning "$topic" in $subject.
 Each flashcard should have a term (front) and definition (back).
@@ -1028,15 +1111,42 @@ Output in this exact JSON format:
             }
 
             try {
-                val mentorIntro = _currentMentor.value.intro
-                val prompt =
-                    "$mentorIntro\n\nWrite one motivating paragraph (3-4 sentences) about why learning $topics in $subject is exciting and useful. Be ${_currentMentor.value.tone}."
+                // Use AI Brain mentor personality
+                val mentorPersonality = getAIBrainMentorPersonality()
+                val localUserId = "local_user"
+                val userContext = memoryStorage.loadUserContext(localUserId)
+
+                // Build adaptive prompt
+                val systemPrompt = if (userContext != null) {
+                    mentorPersonality.getSystemPrompt(userContext)
+                } else {
+                    mentorPersonality.basePrompt
+                }
+
+                val prompt = """
+$systemPrompt
+
+Now, write one motivating paragraph (3-4 sentences) about why learning $topics in $subject is exciting and useful.
+Use your unique teaching style and personality.
+                """.trimIndent()
 
                 var intro = ""
                 RunAnywhere.generateStream(prompt).collect { token ->
                     intro += token
                     _studyMessages.value = listOf(StudyMessage.StreamingAI(intro))
                 }
+
+                // Save this interaction to memory
+                val sentiment = SentimentAnalyzer.analyzeSentiment("starting $subject")
+                memoryStorage.addMemorySnapshot(
+                    MemorySnapshot(
+                        timestamp = System.currentTimeMillis(),
+                        topic = subject,
+                        userQuery = "Start learning $topics in $subject",
+                        aiResponse = intro,
+                        sentiment = sentiment
+                    )
+                )
 
                 // Add learning style options
                 _studyMessages.value += StudyMessage.LearningOptions(
@@ -1208,16 +1318,46 @@ Would you like to start with a quiz or flashcards? Just ask! 😊
             _studyMessages.value += StudyMessage.UserInput(question)
 
             try {
-                val prompt =
-                    "${_currentMentor.value.intro}\n\nStudent question: \"$question\"\n\nAnswer warmly and helpfully (under 150 words). Be ${_currentMentor.value.tone}."
+                // Use AI Brain with adaptive personality
+                val mentorPersonality = getAIBrainMentorPersonality()
+                val localUserId = "local_user"
+                val currentTopic = _currentTopic.value.ifEmpty { _currentSubject.value }
+
+                // Build context-aware prompt with memory
+                val contextualPrompt = memoryContextBuilder.buildContextualPrompt(
+                    userId = localUserId,
+                    currentTopic = currentTopic,
+                    userQuery = question,
+                    basePrompt = mentorPersonality.basePrompt
+                )
+
+                android.util.Log.d("AIBrain", "Using contextual prompt with memory")
 
                 var aiResponse = ""
-                RunAnywhere.generateStream(prompt).collect { token ->
+                RunAnywhere.generateStream(contextualPrompt).collect { token ->
                     aiResponse += token
                     updateStreamingMessage(aiResponse)
                 }
+
+                // Analyze sentiment and save to memory
+                val sentiment = SentimentAnalyzer.analyzeSentiment(question)
+                memoryStorage.addMemorySnapshot(
+                    MemorySnapshot(
+                        timestamp = System.currentTimeMillis(),
+                        topic = currentTopic,
+                        userQuery = question,
+                        aiResponse = aiResponse,
+                        sentiment = sentiment
+                    )
+                )
+
+                // Update mood based on recent interactions
+                memoryStorage.inferMoodFromInteractions(localUserId)
+
+                android.util.Log.d("AIBrain", "Saved interaction - Sentiment: $sentiment")
+
             } catch (e: Exception) {
-                _studyMessages.value += StudyMessage.StreamingAI("Oops! Something went wrong, Champ. 💪")
+                _studyMessages.value += StudyMessage.StreamingAI("Oops! Something went wrong, Champ. ")
             } finally {
                 _isGenerating.value = false
             }
