@@ -442,7 +442,7 @@ fun BadgesGrid(totalQuizzes: Int, accuracy: Int, streak: Int, topicsMastered: In
 
         LazyVerticalGrid(
             columns = GridCells.Fixed(3),
-            modifier = Modifier.height(450.dp),
+            modifier = Modifier.height(520.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
@@ -469,60 +469,55 @@ fun BadgeCard(badge: Badge) {
         modifier = Modifier
             .aspectRatio(1f)
             .clickable { showDialog = true },
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (badge.unlocked) Color.White else Color(0xFFF9FAFB)
         ),
-        elevation = CardDefaults.cardElevation(if (badge.unlocked) 4.dp else 1.dp),
-        border = if (badge.unlocked) BorderStroke(2.dp, Color(0xFF4E6AF6)) else null
+        elevation = CardDefaults.cardElevation(if (badge.unlocked) 6.dp else 2.dp),
+        border = if (badge.unlocked) BorderStroke(
+            2.5.dp, Brush.horizontalGradient(
+                colors = listOf(Color(0xFF4E6AF6), Color(0xFF7C3AED))
+            )
+        ) else BorderStroke(1.dp, Color(0xFFE5E7EB))
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(12.dp),
+                .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxSize()
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(if (badge.unlocked) 1f else 0.6f)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .alpha(if (badge.unlocked) 1f else 0.3f)
-                ) {
-                    Image(
-                        painter = painterResource(id = badge.imageRes),
-                        contentDescription = badge.name,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    if (!badge.unlocked) {
+                Image(
+                    painter = painterResource(id = badge.imageRes),
+                    contentDescription = badge.name,
+                    modifier = Modifier.fillMaxSize()
+                )
+                if (!badge.unlocked) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color.White.copy(alpha = 0.4f)),
+                        contentAlignment = Alignment.Center
+                    ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .background(Color.White.copy(alpha = 0.7f)),
+                                .size(36.dp)
+                                .background(Color(0xFF6B7280).copy(alpha = 0.9f), CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 Icons.Default.Lock,
                                 contentDescription = null,
-                                tint = Color(0xFF9CA3AF),
-                                modifier = Modifier.size(24.dp)
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    badge.name,
-                    fontSize = 11.sp,
-                    color = if (badge.unlocked) Color(0xFF1F2937) else Color(0xFF9CA3AF),
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                    fontWeight = if (badge.unlocked) FontWeight.SemiBold else FontWeight.Normal,
-                    lineHeight = 14.sp
-                )
             }
         }
     }
@@ -531,58 +526,110 @@ fun BadgeCard(badge: Badge) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
             containerColor = Color.White,
+            shape = RoundedCornerShape(20.dp),
             title = {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Image(
-                        painter = painterResource(id = badge.imageRes),
-                        contentDescription = null,
-                        modifier = Modifier.size(40.dp)
-                    )
-                    Text(
-                        badge.name,
-                        color = Color(0xFF1F2937),
-                        fontWeight = FontWeight.Bold
-                    )
+                    Box(
+                        modifier = Modifier
+                            .size(56.dp)
+                            .background(
+                                if (badge.unlocked) Color(0xFFEEF2FF) else Color(0xFFF3F4F6),
+                                CircleShape
+                            )
+                            .padding(8.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = badge.imageRes),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    Column {
+                        Text(
+                            badge.name,
+                            color = Color(0xFF1F2937),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
+                        Text(
+                            if (badge.unlocked) "Unlocked" else "Locked",
+                            color = if (badge.unlocked) Color(0xFF10B981) else Color(0xFF9CA3AF),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         badge.description,
-                        color = Color(0xFF6B7280)
+                        color = Color(0xFF6B7280),
+                        fontSize = 15.sp,
+                        lineHeight = 20.sp
                     )
                     if (badge.unlocked) {
                         Surface(
                             color = Color(0xFFEEF2FF),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text(
-                                "✅ Unlocked! +50 XP",
-                                modifier = Modifier.padding(12.dp),
-                                color = Color(0xFF4E6AF6),
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = Color(0xFF10B981),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    "Achievement Unlocked! +50 XP",
+                                    color = Color(0xFF4E6AF6),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp
+                                )
+                            }
                         }
                     } else {
                         Surface(
-                            color = Color(0xFFF3F4F6),
-                            shape = RoundedCornerShape(8.dp)
+                            color = Color(0xFFFFF3E0),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            Text(
-                                "🔒 Keep learning to unlock!",
-                                modifier = Modifier.padding(12.dp),
-                                color = Color(0xFF6B7280)
-                            )
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Lock,
+                                    contentDescription = null,
+                                    tint = Color(0xFFFFA726),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Text(
+                                    "Keep learning to unlock this!",
+                                    color = Color(0xFFEF6C00),
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 14.sp
+                                )
+                            }
                         }
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showDialog = false }) {
-                    Text("Close", color = Color(0xFF4E6AF6))
+                TextButton(
+                    onClick = { showDialog = false },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFF4E6AF6)
+                    )
+                ) {
+                    Text("Close", fontWeight = FontWeight.Bold)
                 }
             }
         )
