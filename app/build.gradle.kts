@@ -19,6 +19,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Add YouTube API Key
+        buildConfigField("String", "YOUTUBE_API_KEY", "\"AIzaSyBXvlq0yPK6mq-kwomZMje1XrZZfjvnS7A\"")
     }
 
     buildTypes {
@@ -39,6 +41,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -101,6 +104,10 @@ dependencies {
 
     // Coroutines support for Firebase
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+
+    // YouTube Data API integration (using Retrofit + Gson already included above)
+    // Coil for image loading (thumbnails)
+    implementation("io.coil-kt:coil-compose:2.5.0")
 
     // Standard app dependencies
     implementation(libs.androidx.core.ktx)

@@ -12,6 +12,9 @@ import com.runanywhere.sdk.models.ModelInfo
 import com.runanywhere.startup_hackathon20.repository.FirebaseRepository
 import com.runanywhere.startup_hackathon20.ai.*
 import com.runanywhere.startup_hackathon20.audio.VoiceHandler
+import com.runanywhere.startup_hackathon20.youtube.YouTubeRepository
+import com.runanywhere.startup_hackathon20.youtube.YouTubeVideo
+import com.runanywhere.startup_hackathon20.youtube.YouTubeChannel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -21,12 +24,23 @@ import kotlinx.serialization.Serializable
 import kotlin.Result
 
 /**
- * Firebase-integrated StudyViewModel with complete gamification system + AI Brain + Voice
+ * Firebase-integrated StudyViewModel with complete gamification system + AI Brain + Voice + YouTube
  */
 class FirebaseStudyViewModel(application: Application) : AndroidViewModel(application) {
 
     private val firebaseRepo = FirebaseRepository()
+    private val youtubeRepo = YouTubeRepository()
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
+
+    // ===== YOUTUBE STATE =====
+    private val _youtubeVideos = MutableStateFlow<List<YouTubeVideo>>(emptyList())
+    val youtubeVideos: StateFlow<List<YouTubeVideo>> = _youtubeVideos
+
+    private val _youtubeChannels = MutableStateFlow<List<YouTubeChannel>>(emptyList())
+    val youtubeChannels: StateFlow<List<YouTubeChannel>> = _youtubeChannels
+
+    private val _isYouTubeLoading = MutableStateFlow(false)
+    val isYouTubeLoading: StateFlow<Boolean> = _isYouTubeLoading
 
     // ===== VOICE HANDLER =====
     private val voiceHandler = VoiceHandler(application)
@@ -1988,6 +2002,72 @@ Would you like to start with a quiz or flashcards? Just ask! 😊
                 currentSessionId = null
             }
         }
+    }
+
+    // ===== YOUTUBE INTEGRATION =====
+
+    /**
+     * Search for YouTube videos and channels based on current topic
+     */
+    fun searchYouTubeContent(topic: String, subject: String = "") {
+        viewModelScope.launch {
+            _isYouTubeLoading.value = true
+            _youtubeVideos.value = emptyList()
+            _youtubeChannels.value = emptyList()
+
+            try {
+                android.util.Log.d("YouTubeVM", "Searching YouTube for: $topic in $subject")
+
+                // Search videos
+                val videosResult = youtubeRepo.searchVideos(topic, subject)
+                if (videosResult.isSuccess) {
+                    _youtubeVideos.value = videosResult.getOrNull() ?: emptyList()
+                    android.util.Log.d("YouTubeVM", "Found ${_youtubeVideos.value.size} videos")
+                } else {
+                    android.util.Log.e(
+                        "YouTubeVM",
+                        "Video search failed: ${videosResult.exceptionOrNull()?.message}"
+                    )
+                }
+
+                // Search channels
+                val channelsResult = youtubeRepo.searchChannels(topic, subject)
+                if (channelsResult.isSuccess) {
+                    _youtubeChannels.value = channelsResult.getOrNull() ?: emptyList()
+                    android.util.Log.d("YouTubeVM", "Found ${_youtubeChannels.value.size} channels")
+                } else {
+                    android.util.Log.e(
+                        "YouTubeVM",
+                        "Channel search failed: ${channelsResult.exceptionOrNull()?.message}"
+                    )
+                }
+
+            } catch (e: Exception) {
+                android.util.Log.e("YouTubeVM", "YouTube search exception", e)
+                _statusMessage.value = "Failed to load YouTube content: ${e.message}"
+            } finally {
+                _isYouTubeLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * Refresh YouTube content with current subject/topic
+     */
+    fun refreshYouTubeContent() {
+        val subject = _currentSubject.value
+        val topic = _currentTopic.value
+        if (topic.isNotEmpty()) {
+            searchYouTubeContent(topic, subject)
+        }
+    }
+
+    /**
+     * Clear YouTube search results
+     */
+    fun clearYouTubeContent() {
+        _youtubeVideos.value = emptyList()
+        _youtubeChannels.value = emptyList()
     }
 }
 

@@ -192,6 +192,9 @@ fun StudyChampApp(viewModel: FirebaseStudyViewModel = viewModel()) {
                         onNavigateBack = {
                             viewModel.resetJourney()
                             currentScreen = AppScreen.HOME
+                        },
+                        onNavigateToYouTube = {
+                            currentScreen = AppScreen.YOUTUBE
                         }
                     )
 
@@ -221,6 +224,23 @@ fun StudyChampApp(viewModel: FirebaseStudyViewModel = viewModel()) {
                                 onRetry = { viewModel.signInAnonymously() }
                             )
                         }
+                    }
+                    
+                    AppScreen.YOUTUBE -> {
+                        val videos by viewModel.youtubeVideos.collectAsState()
+                        val channels by viewModel.youtubeChannels.collectAsState()
+                        val isLoading by viewModel.isYouTubeLoading.collectAsState()
+                        
+                        YouTubeSuggestionsScreen(
+                            videos = videos,
+                            channels = channels,
+                            isLoading = isLoading,
+                            onBack = { 
+                                viewModel.clearYouTubeContent()
+                                currentScreen = AppScreen.STUDY
+                            },
+                            onRefresh = { viewModel.refreshYouTubeContent() }
+                        )
                     }
                 }
             }
@@ -345,7 +365,7 @@ fun BottomNavigationBar(
 // ... existing code ...
 
 enum class AppScreen {
-    MENTOR_SELECT, HOME, STUDY, MODELS, ACHIEVEMENTS, PROFILE
+    MENTOR_SELECT, HOME, STUDY, MODELS, ACHIEVEMENTS, PROFILE, YOUTUBE
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -941,7 +961,8 @@ fun QuickActionCardWithIcon(
 @Composable
 fun StudyJourneyScreen(
     viewModel: FirebaseStudyViewModel,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onNavigateToYouTube: () -> Unit
 ) {
     val studyMessages by viewModel.studyMessages.collectAsState()
     val isGenerating by viewModel.isGenerating.collectAsState()
@@ -1006,7 +1027,7 @@ fun StudyJourneyScreen(
                     }
                 }
 
-                // Quiz/Flashcard options
+                // Quiz/Flashcard/YouTube options
                 if (studyMessages.isNotEmpty() && !isGenerating) {
                     item {
                         Card(
@@ -1073,6 +1094,27 @@ fun StudyJourneyScreen(
                                         )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text("Flashcards", fontWeight = FontWeight.Bold)
+                                    }
+                                    Button(
+                                        onClick = {
+                                            viewModel.refreshYouTubeContent()
+                                            onNavigateToYouTube()
+                                        },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .height(48.dp),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Color(0xFFFF0000)
+                                        ),
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.PlayArrow,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("YouTube", fontWeight = FontWeight.Bold)
                                     }
                                 }
                             }
