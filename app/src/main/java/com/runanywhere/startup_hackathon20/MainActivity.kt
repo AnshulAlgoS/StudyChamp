@@ -1,3 +1,4 @@
+
 package com.runanywhere.startup_hackathon20
 
 import android.os.Build
@@ -46,9 +47,12 @@ import androidx.lifecycle.ViewModelProvider.NewInstanceFactory
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.runanywhere.startup_hackathon20.ui.*
 import com.runanywhere.startup_hackathon20.ui.theme.*
+import com.runanywhere.startup_hackathon20.arena.*
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -78,15 +82,25 @@ class MainActivity : ComponentActivity() {
                 ViewModelProvider(this, FirebaseStudyViewModelFactory(application)).get(
                     FirebaseStudyViewModel::class.java
                 )
+
+            // Recreate ArenaViewModel when user changes
+            val currentUserId by viewModel.currentUserId.collectAsState()
+            val arenaViewModel: ArenaViewModel = remember(currentUserId) {
+                ViewModelProvider(this).get(ArenaViewModel::class.java)
+            }
+
             Startup_hackathon20Theme {
-                StudyChampApp(viewModel = viewModel)
+                StudyChampApp(viewModel = viewModel, arenaViewModel = arenaViewModel)
             }
         }
     }
 }
 
 @Composable
-fun StudyChampApp(viewModel: FirebaseStudyViewModel = viewModel()) {
+fun StudyChampApp(
+    viewModel: FirebaseStudyViewModel = viewModel(),
+    arenaViewModel: ArenaViewModel = viewModel()
+) {
     val userProfile by viewModel.userProfile.collectAsState()
     val isSignedIn by viewModel.isSignedIn.collectAsState()
     val isModelReady by viewModel.isModelReady.collectAsState()
@@ -94,18 +108,25 @@ fun StudyChampApp(viewModel: FirebaseStudyViewModel = viewModel()) {
     val currentFlashcards by viewModel.currentFlashcards.collectAsState()
     val currentMentor by viewModel.currentMentor.collectAsState()
 
-    var currentScreen by remember { mutableStateOf(AppScreen.HOME) }
+    var currentScreen by remember {
+        mutableStateOf(if (isSignedIn) AppScreen.HOME else AppScreen.LOGIN)
+    }
     var showProfileSetup by remember { mutableStateOf(false) }
 
-    // Check if user needs profile setup
+    // Handle authentication state changes
     LaunchedEffect(isSignedIn, userProfile) {
-        if (isSignedIn && userProfile == null) {
+        if (!isSignedIn) {
+            currentScreen = AppScreen.LOGIN
+            showProfileSetup = false
+        } else if (isSignedIn && userProfile == null) {
             showProfileSetup = true
-        } else if (userProfile != null && showProfileSetup) {
+        } else if (userProfile != null) {
             showProfileSetup = false
             // Show mentor selection if no mentor selected
             if (userProfile?.selectedMentor.isNullOrEmpty()) {
                 currentScreen = AppScreen.MENTOR_SELECT
+            } else if (currentScreen == AppScreen.LOGIN || currentScreen == AppScreen.SIGNUP) {
+                currentScreen = AppScreen.HOME
             }
         }
     }
@@ -150,8 +171,8 @@ fun StudyChampApp(viewModel: FirebaseStudyViewModel = viewModel()) {
                             currentScreen = AppScreen.STUDY
                         },
                         onBack = {
-                            viewModel.resetJourney()
-                            currentScreen = AppScreen.HOME
+                            // Just close quiz and go back to study chat
+                            currentScreen = AppScreen.STUDY
                         }
                     )
                 }
@@ -164,13 +185,61 @@ fun StudyChampApp(viewModel: FirebaseStudyViewModel = viewModel()) {
                             currentScreen = AppScreen.STUDY
                         },
                         onBack = {
-                            viewModel.resetJourney()
-                            currentScreen = AppScreen.HOME
+                            // Just close flashcards and go back to study chat
+                            currentScreen = AppScreen.STUDY
                         }
                     )
                 }
                 // Regular navigation
                 else -> when (currentScreen) {
+                    AppScreen.LOGIN -> {
+                        var isLoading by remember { mutableStateOf(false) }
+                        var errorMessage by remember { mutableStateOf<String?>(null) }
+
+                        LoginScreen(
+                            onLoginSuccess = {
+                                // Navigation handled by LaunchedEffect observing isSignedIn
+                            },
+                            onNavigateToSignup = { currentScreen = AppScreen.SIGNUP },
+                            onLogin = { email, password ->
+                                isLoading = true
+                                errorMessage = null
+                                viewModel.signInWithEmail(email, password) { success, error ->
+                                    isLoading = false
+                                    if (!success) {
+                                        errorMessage = error
+                                    }
+                                }
+                            },
+                            isLoading = isLoading,
+                            errorMessage = errorMessage
+                        )
+                    }
+
+                    AppScreen.SIGNUP -> {
+                        var isLoading by remember { mutableStateOf(false) }
+                        var errorMessage by remember { mutableStateOf<String?>(null) }
+
+                        SignupScreen(
+                            onSignupSuccess = {
+                                // Navigation handled by LaunchedEffect observing isSignedIn
+                            },
+                            onNavigateToLogin = { currentScreen = AppScreen.LOGIN },
+                            onSignup = { name, email, password ->
+                                isLoading = true
+                                errorMessage = null
+                                viewModel.signUpWithEmail(name, email, password) { success, error ->
+                                    isLoading = false
+                                    if (!success) {
+                                        errorMessage = error
+                                    }
+                                }
+                            },
+                            isLoading = isLoading,
+                            errorMessage = errorMessage
+                        )
+                    }
+
                     AppScreen.MENTOR_SELECT -> MentorSelectionScreen(
                         onMentorSelected = { mentorId ->
                             viewModel.selectMentor(mentorId)
@@ -184,7 +253,8 @@ fun StudyChampApp(viewModel: FirebaseStudyViewModel = viewModel()) {
                         onNavigateToStudy = { currentScreen = AppScreen.STUDY },
                         onNavigateToModels = { currentScreen = AppScreen.MODELS },
                         onNavigateToAchievements = { currentScreen = AppScreen.ACHIEVEMENTS },
-                        onNavigateToProfile = { currentScreen = AppScreen.PROFILE }
+                        onNavigateToProfile = { currentScreen = AppScreen.PROFILE },
+                        onNavigateToArena = { currentScreen = AppScreen.ARENA }
                     )
 
                     AppScreen.STUDY -> StudyJourneyScreen(
@@ -215,6 +285,10 @@ fun StudyChampApp(viewModel: FirebaseStudyViewModel = viewModel()) {
                                 onChangeMentor = { currentScreen = AppScreen.MENTOR_SELECT },
                                 onEditProfile = { name, email ->
                                     viewModel.createOrUpdateProfile(name, email)
+                                },
+                                onLogout = {
+                                    viewModel.signOut()
+                                    currentScreen = AppScreen.HOME
                                 }
                             )
                         } ?: run {
@@ -240,6 +314,14 @@ fun StudyChampApp(viewModel: FirebaseStudyViewModel = viewModel()) {
                                 currentScreen = AppScreen.STUDY
                             },
                             onRefresh = { viewModel.refreshYouTubeContent() }
+                        )
+                    }
+                    
+                    AppScreen.ARENA -> {
+                        // Focus Arena - FULLY FUNCTIONAL!
+                        FocusArenaMainScreen(
+                            viewModel = arenaViewModel,
+                            onNavigateBack = { currentScreen = AppScreen.HOME }
                         )
                     }
                 }
@@ -365,7 +447,7 @@ fun BottomNavigationBar(
 // ... existing code ...
 
 enum class AppScreen {
-    MENTOR_SELECT, HOME, STUDY, MODELS, ACHIEVEMENTS, PROFILE, YOUTUBE
+    LOGIN, SIGNUP, MENTOR_SELECT, HOME, STUDY, MODELS, ACHIEVEMENTS, PROFILE, YOUTUBE, ARENA
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -376,7 +458,8 @@ fun HomeScreen(
     onNavigateToStudy: () -> Unit,
     onNavigateToModels: () -> Unit,
     onNavigateToAchievements: () -> Unit,
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    onNavigateToArena: () -> Unit = {}
 ) {
     val statusMessage by viewModel.statusMessage.collectAsState()
     val isModelReady by viewModel.isModelReady.collectAsState()
@@ -619,6 +702,62 @@ fun HomeScreen(
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            // Focus Arena Card (NEW!)
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onNavigateToArena() },
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF6B46C1)  // Purple gradient
+                    ),
+                    shape = RoundedCornerShape(20.dp),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Face,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                                Text(
+                                    text = "Focus Arena",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                            Text(
+                                text = "Compete with peers in real-time study sessions",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.9f)
+                            )
+                        }
+                        Icon(
+                            Icons.Default.KeyboardArrowRight,
+                            contentDescription = "Enter Arena",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
                     }
                 }
             }
@@ -1609,6 +1748,7 @@ fun ModelManagementScreen(
 ) {
     val availableModels by viewModel.availableModels.collectAsState()
     val downloadProgress by viewModel.downloadProgress.collectAsState()
+    val downloadingModelId by viewModel.downloadingModelId.collectAsState()
     val currentModelId by viewModel.currentModelId.collectAsState()
     val statusMessage by viewModel.statusMessage.collectAsState()
     val isModelLoading by viewModel.isModelLoading.collectAsState()
@@ -1731,8 +1871,11 @@ fun ModelManagementScreen(
                                 model = model,
                                 isLoaded = model.id == currentModelId,
                                 isLoading = isModelLoading,
+                                downloadProgress = downloadProgress,
+                                isDownloadingThisModel = model.id == downloadingModelId,
                                 onDownload = { viewModel.downloadModel(model.id) },
-                                onLoad = { viewModel.loadModel(model.id) }
+                                onLoad = { viewModel.loadModel(model.id) },
+                                onCancelDownload = { viewModel.cancelDownload() }
                             )
                         }
                     }
@@ -1747,9 +1890,15 @@ fun CleanModelCard(
     model: com.runanywhere.sdk.models.ModelInfo,
     isLoaded: Boolean,
     isLoading: Boolean,
+    downloadProgress: Float?,
+    isDownloadingThisModel: Boolean,
     onDownload: () -> Unit,
-    onLoad: () -> Unit
+    onLoad: () -> Unit,
+    onCancelDownload: () -> Unit
 ) {
+    // Track if this specific model is being downloaded
+    val isDownloading = isDownloadingThisModel && downloadProgress != null && !model.isDownloaded
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -1776,39 +1925,59 @@ fun CleanModelCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        if (isLoaded) {
-                            Icon(
-                                Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = Color(0xFF4CAF50),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = "Active",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF2E7D32),
-                                fontWeight = FontWeight.Medium
-                            )
-                        } else if (model.isDownloaded) {
-                            Icon(
-                                Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = Color(0xFF4E6AF6),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = "Downloaded",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF4E6AF6),
-                                fontWeight = FontWeight.Medium
-                            )
-                        } else {
-                            Text(
-                                text = "Not downloaded",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray,
-                                fontWeight = FontWeight.Normal
-                            )
+                        when {
+                            isLoaded -> {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = Color(0xFF4CAF50),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = "Active",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF2E7D32),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            isDownloading -> {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = Color(0xFFFFC107),
+                                    strokeWidth = 2.dp
+                                )
+                                Text(
+                                    text = "Downloading ${(downloadProgress!! * 100).toInt()}%",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFFFFC107),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            model.isDownloaded -> {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = Color(0xFF4E6AF6),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = "Downloaded",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFF4E6AF6),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            else -> {
+                                Text(
+                                    text = "Not downloaded",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray,
+                                    fontWeight = FontWeight.Normal
+                                )
+                            }
                         }
                     }
                 }
@@ -1820,67 +1989,180 @@ fun CleanModelCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (model.isDownloaded) {
-                    // Show only Load button when downloaded
-                    Button(
-                        onClick = onLoad,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        enabled = !isLoaded && !isLoading,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (!isLoaded && !isLoading) Color(0xFF4E6AF6) else Color(
-                                0xFFE0E0E0
+                when {
+                    isLoaded -> {
+                        // Model is loaded - show as active
+                        Button(
+                            onClick = { /* Already loaded */ },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            enabled = false,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF4CAF50),
+                                contentColor = Color.White,
+                                disabledContainerColor = Color(0xFF4CAF50),
+                                disabledContentColor = Color.White
                             ),
-                            contentColor = Color.White,
-                            disabledContainerColor = Color(0xFFE0E0E0),
-                            disabledContentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(
-                            if (isLoaded) Icons.Default.CheckCircle else Icons.Default.Star,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (isLoaded) "Loaded" else "Load Model",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            color = Color.White
-                        )
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Model Loaded",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = Color.White
+                            )
+                        }
                     }
-                } else {
-                    // Show only Download button when not downloaded
-                    Button(
-                        onClick = onDownload,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        enabled = !isLoading,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (!isLoading) Color(0xFFFFC107) else Color(0xFFE0E0E0),
-                            contentColor = Color.White,
-                            disabledContainerColor = Color(0xFFE0E0E0),
-                            disabledContentColor = Color.White
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Download Model",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            color = Color.White
-                        )
+
+                    isDownloading -> {
+                        // Currently downloading - show progress with cancel button
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(
+                                onClick = { /* Can't click while downloading */ },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp),
+                                enabled = false,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFFFC107),
+                                    contentColor = Color.White,
+                                    disabledContainerColor = Color(0xFFFFC107),
+                                    disabledContentColor = Color.White
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Downloading ${(downloadProgress!! * 100).toInt()}%",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = Color.White
+                                )
+                            }
+                            Button(
+                                onClick = onCancelDownload,
+                                modifier = Modifier
+                                    .height(48.dp)
+                                    .width(100.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFFF5252)
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Cancel",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Cancel",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+
+                    model.isDownloaded -> {
+                        // Downloaded - show Load button
+                        Button(
+                            onClick = onLoad,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            enabled = !isLoading,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (!isLoading) Color(0xFF4E6AF6) else Color(
+                                    0xFFE0E0E0
+                                ),
+                                contentColor = Color.White,
+                                disabledContainerColor = Color(0xFFE0E0E0),
+                                disabledContentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = Color.White,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Loading...",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp,
+                                    color = Color.White
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.Star,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = Color.White
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Load Model",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+
+                    else -> {
+                        // Not downloaded - show Download button
+                        Button(
+                            onClick = onDownload,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            enabled = !isDownloading && !isLoading,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (!isDownloading && !isLoading) Color(0xFFFFC107) else Color(
+                                    0xFFE0E0E0
+                                ),
+                                contentColor = Color.White,
+                                disabledContainerColor = Color(0xFFE0E0E0),
+                                disabledContentColor = Color.White
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Download Model",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = Color.White
+                            )
+                        }
                     }
                 }
             }

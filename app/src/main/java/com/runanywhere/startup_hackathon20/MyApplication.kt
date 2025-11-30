@@ -65,11 +65,39 @@ class MyApplication : Application() {
     }
 
     private suspend fun registerModels() {
-        // Medium-sized model - better quality (374 MB)
+        // ============================================
+        // 🏆 STUDY CHAMP AI MODELS - QWEN 2.5
+        // ============================================
+        // Using Qwen 2.5 - Publicly accessible, no auth required!
+        // Better performance for educational tasks
+
+        // PRIMARY MODEL: Qwen 2.5 1.5B - Best Quality (1.2 GB)
+        // Excellent instruction following and reasoning
         addModelFromURL(
-            url = "https://huggingface.co/Triangle104/Qwen2.5-0.5B-Instruct-Q6_K-GGUF/resolve/main/qwen2.5-0.5b-instruct-q6_k.gguf",
-            name = "Qwen 2.5 0.5B Instruct Q6_K",
+            url = "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q6_k.gguf",
+            name = "Qwen 2.5 1.5B Instruct Q6_K",
             type = "LLM"
         )
+        Log.i("StudyChamp", "🎯 Registered Qwen 2.5 1.5B Q6_K - Premium Quality")
+
+        // BALANCED MODEL: Qwen 2.5 1.5B Q5 (950 MB)
+        // Good balance between quality and size
+        addModelFromURL(
+            url = "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q5_k_m.gguf",
+            name = "Qwen 2.5 1.5B Instruct Q5_K_M",
+            type = "LLM"
+        )
+        Log.i("StudyChamp", "⚡ Registered Qwen 2.5 1.5B Q5_K_M - Balanced")
+
+        // LIGHTWEIGHT MODEL: Qwen 2.5 1.5B Q4 (750 MB)
+        // Fast and efficient for quick responses
+        addModelFromURL(
+            url = "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+            name = "Qwen 2.5 1.5B Instruct Q4_K_M",
+            type = "LLM"
+        )
+        Log.i("StudyChamp", "🚀 Registered Qwen 2.5 1.5B Q4_K_M - Fast Mode")
+
+        Log.i("StudyChamp", "✅ ALL QWEN MODELS REGISTERED - Ready to learn! 🏆")
     }
 }

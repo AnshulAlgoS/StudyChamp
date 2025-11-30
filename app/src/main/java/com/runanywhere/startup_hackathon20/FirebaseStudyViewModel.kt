@@ -15,6 +15,8 @@ import com.runanywhere.startup_hackathon20.audio.VoiceHandler
 import com.runanywhere.startup_hackathon20.youtube.YouTubeRepository
 import com.runanywhere.startup_hackathon20.youtube.YouTubeVideo
 import com.runanywhere.startup_hackathon20.youtube.YouTubeChannel
+import com.runanywhere.startup_hackathon20.utils.NetworkUtils
+import com.runanywhere.startup_hackathon20.services.ResourceFetcherService
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -30,6 +32,7 @@ class FirebaseStudyViewModel(application: Application) : AndroidViewModel(applic
 
     private val firebaseRepo = FirebaseRepository()
     private val youtubeRepo = YouTubeRepository()
+    private val resourceFetcher = ResourceFetcherService()
     private val json = Json { ignoreUnknownKeys = true; isLenient = true }
 
     // ===== YOUTUBE STATE =====
@@ -84,6 +87,11 @@ class FirebaseStudyViewModel(application: Application) : AndroidViewModel(applic
 
     private val _downloadProgress = MutableStateFlow<Float?>(null)
     val downloadProgress: StateFlow<Float?> = _downloadProgress
+
+    private val _downloadingModelId = MutableStateFlow<String?>(null)
+    val downloadingModelId: StateFlow<String?> = _downloadingModelId
+
+    private var downloadJob: kotlinx.coroutines.Job? = null
 
     private val _currentModelId = MutableStateFlow<String?>(null)
     val currentModelId: StateFlow<String?> = _currentModelId
@@ -242,6 +250,87 @@ class FirebaseStudyViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    fun signInWithEmail(
+        email: String,
+        password: String,
+        onResult: (success: Boolean, error: String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val result = firebaseRepo.signInWithEmail(email, password)
+                when {
+                    result.isSuccess -> {
+                        val user = result.getOrNull()
+                        user?.let {
+                            _currentUserId.value = it.uid
+                            _isSignedIn.value = true
+                            _statusMessage.value = "Welcome back!"
+                            loadUserProfile(it.uid)
+                        }
+                        onResult(true, null)
+                    }
+
+                    result.isFailure -> {
+                        val error = result.exceptionOrNull()?.message ?: "Sign in failed"
+                        _statusMessage.value = error
+                        _isSignedIn.value = false
+                        onResult(false, error)
+                    }
+                }
+            } catch (e: Exception) {
+                val error = e.message ?: "Sign in failed"
+                _statusMessage.value = error
+                _isSignedIn.value = false
+                onResult(false, error)
+            }
+        }
+    }
+
+    fun signUpWithEmail(
+        name: String,
+        email: String,
+        password: String,
+        onResult: (success: Boolean, error: String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val result = firebaseRepo.signUpWithEmail(email, password, name)
+                when {
+                    result.isSuccess -> {
+                        val user = result.getOrNull()
+                        user?.let {
+                            _currentUserId.value = it.uid
+                            _isSignedIn.value = true
+
+                            // Create user profile with name
+                            val profileResult = firebaseRepo.createUserProfile(name, email)
+                            if (profileResult.isSuccess) {
+                                loadUserProfile(it.uid)
+                                _statusMessage.value = "Welcome to StudyChamp, $name!"
+                                onResult(true, null)
+                            } else {
+                                _statusMessage.value = "Account created but profile setup failed"
+                                onResult(false, "Profile setup failed")
+                            }
+                        }
+                    }
+
+                    result.isFailure -> {
+                        val error = result.exceptionOrNull()?.message ?: "Sign up failed"
+                        _statusMessage.value = error
+                        _isSignedIn.value = false
+                        onResult(false, error)
+                    }
+                }
+            } catch (e: Exception) {
+                val error = e.message ?: "Sign up failed"
+                _statusMessage.value = error
+                _isSignedIn.value = false
+                onResult(false, error)
+            }
+        }
+    }
+
     /**
      * Enable offline mode when Firebase is not available
      */
@@ -349,6 +438,23 @@ class FirebaseStudyViewModel(application: Application) : AndroidViewModel(applic
                 _statusMessage.value = "Profile updated! 🎉"
             }
         }
+    }
+
+    fun signOut() {
+        firebaseRepo.signOut()
+        _currentUserId.value = null
+        _isSignedIn.value = false
+        _userProfile.value = null
+        _studyMessages.value = emptyList()
+        _currentQuiz.value = null
+        _currentFlashcards.value = null
+        _achievements.value = emptyList()
+        _statusMessage.value = "Signed out successfully"
+
+        // Stop voice if speaking
+        voiceHandler.stop()
+
+        android.util.Log.d("FirebaseStudyVM", "User signed out successfully")
     }
 
     fun selectMentor(mentorId: String) {
@@ -1243,23 +1349,98 @@ Output in this exact JSON format:
     }
 
     fun downloadModel(modelId: String) {
-        viewModelScope.launch {
+        android.util.Log.d("DownloadModel", "=== DOWNLOAD START ===")
+        android.util.Log.d("DownloadModel", "Model ID: $modelId")
+
+        // Check internet connectivity first
+        val hasInternet = NetworkUtils.isInternetAvailable(getApplication())
+        android.util.Log.d("DownloadModel", "Internet available: $hasInternet")
+
+        if (!hasInternet) {
+            _statusMessage.value = "No internet connection. Please check your network."
+            android.util.Log.e("DownloadModel", "No internet - aborting download")
+            return
+        }
+
+        // Cancel any existing download
+        downloadJob?.cancel()
+        android.util.Log.d("DownloadModel", "Previous download job cancelled (if any)")
+
+        downloadJob = viewModelScope.launch {
             try {
-                _statusMessage.value = "Downloading your AI mentor... 📥"
+                android.util.Log.d("DownloadModel", "Starting download coroutine...")
+                _downloadingModelId.value = modelId
+                _downloadProgress.value = 0f
+                _statusMessage.value = "Initializing download... 📥"
+                android.util.Log.d(
+                    "DownloadModel",
+                    "State updated - starting RunAnywhere.downloadModel"
+                )
+
+                var progressCount = 0
                 RunAnywhere.downloadModel(modelId).collect { progress ->
+                    progressCount++
                     _downloadProgress.value = progress
                     _statusMessage.value = "Downloading: ${(progress * 100).toInt()}%"
+                    android.util.Log.d(
+                        "DownloadModel",
+                        "Progress update #$progressCount: ${(progress * 100).toInt()}%"
+                    )
                 }
-                _downloadProgress.value = null
-                _statusMessage.value = "Download complete! Now tap 'Load' to activate "
 
-                // Refresh model list to update UI with new download status
-                loadAvailableModels()
-            } catch (e: Exception) {
-                _statusMessage.value = "Download failed: ${e.message}"
+                android.util.Log.d(
+                    "DownloadModel",
+                    "Download flow completed! Total progress updates: $progressCount"
+                )
+
+                // Download complete - clear progress and refresh models
                 _downloadProgress.value = null
+                _downloadingModelId.value = null
+                downloadJob = null
+                android.util.Log.d(
+                    "DownloadModel",
+                    "State cleared, scanning for downloaded models..."
+                )
+
+                // Scan for downloaded models first
+                RunAnywhere.scanForDownloadedModels()
+                android.util.Log.d("DownloadModel", "Scan completed")
+
+                // Then refresh the list
+                delay(500) // Small delay to ensure scan completes
+                loadAvailableModels()
+                android.util.Log.d("DownloadModel", "Models list refreshed")
+
+                _statusMessage.value = "Download complete! Now tap 'Load' to activate ✅"
+                android.util.Log.d("DownloadModel", "=== DOWNLOAD SUCCESS ===")
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                android.util.Log.w("DownloadModel", "Download cancelled by user")
+                _statusMessage.value = "Download cancelled"
+                _downloadProgress.value = null
+                _downloadingModelId.value = null
+                downloadJob = null
+            } catch (e: Exception) {
+                android.util.Log.e("DownloadModel", "Download FAILED with exception:", e)
+                android.util.Log.e("DownloadModel", "Exception type: ${e::class.java.simpleName}")
+                android.util.Log.e("DownloadModel", "Exception message: ${e.message}")
+                e.printStackTrace()
+
+                _statusMessage.value = "Download failed: ${e.message ?: "Unknown error"}"
+                _downloadProgress.value = null
+                _downloadingModelId.value = null
+                downloadJob = null
+
+                android.util.Log.d("DownloadModel", "=== DOWNLOAD FAILED ===")
             }
         }
+    }
+
+    fun cancelDownload() {
+        downloadJob?.cancel()
+        _downloadProgress.value = null
+        _downloadingModelId.value = null
+        downloadJob = null
+        _statusMessage.value = "Download cancelled"
     }
 
     fun loadModel(modelId: String) {
@@ -1273,12 +1454,19 @@ Output in this exact JSON format:
                     _currentModelId.value = modelId
                     _isModelReady.value = true
                     _statusMessage.value = "Ready to learn, Champ! 🎉"
+
+                    // Refresh models list to show updated status
+                    delay(300)
                     loadAvailableModels()
                 } else {
                     _statusMessage.value = "Failed to load model - please try again"
+                    _currentModelId.value = null
+                    _isModelReady.value = false
                 }
             } catch (e: Exception) {
                 _statusMessage.value = "Error loading model: ${e.message}"
+                _currentModelId.value = null
+                _isModelReady.value = false
             } finally {
                 _isModelLoading.value = false
             }
@@ -1481,21 +1669,45 @@ Now, explain $topics in $subject using your unique teaching approach:
     }
 
     private suspend fun showResourcesContent(subject: String, topics: String) {
+        // Check if internet is available
+        val hasInternet = NetworkUtils.isInternetAvailable(getApplication())
+
+        android.util.Log.d(
+            "FirebaseStudyVM",
+            "Fetching resources - Internet available: $hasInternet"
+        )
+
         // Add mentor personality-specific intro to resources
-        val mentorIntro =
-            when (_currentMentor.value.id) {
-                "sensei" -> "As your Sensei, wisdom is found in many sources. Here are resources for your journey:"
-                "coach_max" -> "Alright champ, here's your Resource Playbook to help us win at $topics!"
-                "mira" -> "✨ For our magical journey, let's gather resources from the enchanted library:"
-                else -> "Here are some helpful resources!"
+        val mentorIntro = when (_currentMentor.value.id) {
+            "sensei" -> "As your Sensei, wisdom is found in many sources. Here are resources for your journey:"
+            "coach_max" -> "Alright champ, here's your Resource Playbook to help us win at $topics!"
+            "mira" -> "✨ For our magical journey, let's gather resources from the enchanted library:"
+            else -> "Here are some helpful resources!"
+        }
+
+        val resources = if (hasInternet) {
+            // Fetch REAL resources from the internet
+            try {
+                android.util.Log.d("FirebaseStudyVM", "Fetching REAL online resources...")
+                val fetchedResources = resourceFetcher.fetchResources(subject, topics)
+                mentorIntro + "\n\n" + formatFetchedResources(fetchedResources)
+            } catch (e: Exception) {
+                android.util.Log.e("FirebaseStudyVM", "Failed to fetch online resources", e)
+                mentorIntro + "\n\n" + buildResourcesList(subject, topics)
             }
-        val resources = mentorIntro + "\n\n" + buildResourcesList(subject, topics)
+        } else {
+            // Use fallback curated resources
+            android.util.Log.d("FirebaseStudyVM", "No internet - using curated resources")
+            mentorIntro + "\n\n" + buildResourcesList(subject, topics)
+        }
+
         _studyMessages.value += StudyMessage.StreamingAI(resources)
 
-        // Speak resources content if enabled
+        // Speak resources content if enabled (remove emojis for speech)
         if (_isVoiceEnabled.value && resources.isNotBlank()) {
             val mentorVoice = _currentMentor.value.voiceId
-            voiceHandler.speak(resources, mentorVoice)
+            val cleanResources = removeEmojisForSpeech(resources)
+            voiceHandler.speak(cleanResources, mentorVoice)
         }
     }
 
@@ -1821,8 +2033,99 @@ Now, create a simple 3-week learning roadmap for $topics in $subject:
         }
     }
 
-    private fun generateDetailedResources(subject: String, topics: String, mentor: MentorProfile): String {
-        val resources = """
+    private suspend fun generateDetailedResources(
+        subject: String,
+        topics: String,
+        mentor: MentorProfile
+    ): String {
+        // Check if internet is available
+        val hasInternet = NetworkUtils.isInternetAvailable(getApplication())
+
+        val resources = if (hasInternet) {
+            // Fetch REAL resources from the internet
+            try {
+                android.util.Log.d("FirebaseStudyVM", "Fetching REAL detailed resources online...")
+                val fetchedResources = resourceFetcher.fetchResources(subject, topics)
+                formatDetailedFetchedResources(fetchedResources, subject, topics)
+            } catch (e: Exception) {
+                android.util.Log.e("FirebaseStudyVM", "Failed to fetch detailed resources", e)
+                getDefaultDetailedResources(subject, topics)
+            }
+        } else {
+            // Use fallback curated resources
+            android.util.Log.d("FirebaseStudyVM", "No internet - using default detailed resources")
+            getDefaultDetailedResources(subject, topics)
+        }
+
+        return when (mentor.id) {
+            "sensei" -> "Wise scholars seek knowledge from many sources. Here are paths to deepen your understanding of $topics:\n\n$resources\n\nTrue wisdom comes not from a single source, but from the synthesis of many teachings."
+            "coach_max" -> "Hey champ! Here's your resource playbook for dominating $topics:\n\n$resources\n\nThese tools will help us train and level up your skills. Let's use them all!"
+            "mira" -> "Let me show you the treasures of knowledge for learning $topics, dear friend:\n\n$resources\n\nEach resource is a magical scroll containing wisdom. Explore them and watch your understanding grow!"
+            else -> resources
+        }
+    }
+
+    private fun formatDetailedFetchedResources(
+        resources: ResourceFetcherService.ResourceCollection,
+        subject: String,
+        topics: String
+    ): String {
+        val sb = StringBuilder()
+        sb.append("Recommended Resources for $topics in $subject:\n\n")
+
+        // Video Resources
+        sb.append("VIDEO RESOURCES:\n")
+        if (resources.videos.isNotEmpty()) {
+            resources.videos.forEach { resource ->
+                sb.append("- ${resource.title}\n")
+                sb.append("  ${resource.url}\n")
+                sb.append("  ${resource.description}\n\n")
+            }
+        }
+
+        // Reading Materials
+        sb.append("READING MATERIALS:\n")
+        if (resources.articles.isNotEmpty()) {
+            resources.articles.forEach { resource ->
+                sb.append("- ${resource.title}\n")
+                sb.append("  ${resource.url}\n")
+                sb.append("  ${resource.description}\n\n")
+            }
+        }
+
+        // Online Courses
+        sb.append("ONLINE COURSES:\n")
+        if (resources.courses.isNotEmpty()) {
+            resources.courses.forEach { resource ->
+                sb.append("- ${resource.title}\n")
+                sb.append("  ${resource.url}\n")
+                sb.append("  ${resource.description}\n\n")
+            }
+        }
+
+        // Practice Platforms
+        sb.append("PRACTICE PLATFORMS & TOOLS:\n")
+        if (resources.practice.isNotEmpty()) {
+            resources.practice.forEach { resource ->
+                sb.append("- ${resource.title}\n")
+                sb.append("  ${resource.url}\n")
+                sb.append("  ${resource.description}\n\n")
+            }
+        }
+
+        // Add study strategies
+        sb.append("STUDY STRATEGIES:\n")
+        sb.append("- Create your own summary notes after each lesson\n")
+        sb.append("- Form study groups to discuss concepts\n")
+        sb.append("- Use the Feynman Technique: Explain concepts in simple terms\n")
+        sb.append("- Practice spaced repetition for long-term retention\n")
+        sb.append("- Test yourself regularly with quizzes and problems\n")
+
+        return sb.toString()
+    }
+
+    private fun getDefaultDetailedResources(subject: String, topics: String): String {
+        return """
             Recommended Resources for $topics in $subject:
             
             VIDEO RESOURCES:
@@ -1852,13 +2155,58 @@ Now, create a simple 3-week learning roadmap for $topics in $subject:
             - Practice spaced repetition for long-term retention
             - Test yourself regularly with quizzes and problems
         """.trimIndent()
-        
-        return when (mentor.id) {
-            "sensei" -> "Wise scholars seek knowledge from many sources. Here are paths to deepen your understanding of $topics:\n\n$resources\n\nTrue wisdom comes not from a single source, but from the synthesis of many teachings."
-            "coach_max" -> "Hey champ! Here's your resource playbook for dominating $topics:\n\n$resources\n\nThese tools will help us train and level up your skills. Let's use them all!"
-            "mira" -> "Let me show you the treasures of knowledge for learning $topics, dear friend:\n\n$resources\n\nEach resource is a magical scroll containing wisdom. Explore them and watch your understanding grow!"
-            else -> resources
+    }
+
+    /**
+     * Format fetched resources into a readable string with clickable links
+     */
+    private fun formatFetchedResources(resources: ResourceFetcherService.ResourceCollection): String {
+        val sb = StringBuilder()
+
+        // Video Resources
+        if (resources.videos.isNotEmpty()) {
+            sb.append("🎥 **Video Learning**\n")
+            resources.videos.take(4).forEach { resource ->
+                sb.append("   • ${resource.title}\n")
+                sb.append("     ${resource.url}\n")
+                sb.append("     ${resource.description}\n\n")
+            }
         }
+
+        // Article Resources
+        if (resources.articles.isNotEmpty()) {
+            sb.append("📖 **Reading Materials**\n")
+            resources.articles.take(4).forEach { resource ->
+                sb.append("   • ${resource.title}\n")
+                sb.append("     ${resource.url}\n")
+                sb.append("     ${resource.description}\n\n")
+            }
+        }
+
+        // Course Resources
+        if (resources.courses.isNotEmpty()) {
+            sb.append("📚 **Online Courses**\n")
+            resources.courses.take(4).forEach { resource ->
+                sb.append("   • ${resource.title}\n")
+                sb.append("     ${resource.url}\n")
+                sb.append("     ${resource.description}\n\n")
+            }
+        }
+
+        // Practice Resources
+        if (resources.practice.isNotEmpty()) {
+            sb.append("✍️ **Practice & Tools**\n")
+            resources.practice.take(5).forEach { resource ->
+                sb.append("   • ${resource.title}\n")
+                sb.append("     ${resource.url}\n")
+                sb.append("     ${resource.description}\n\n")
+            }
+        }
+
+        sb.append("\n💡 Tap any URL to open it in your browser!\n")
+        sb.append("\n🎯 Ready to test your knowledge? Type 'quiz' or 'flashcards'!")
+
+        return sb.toString().trim()
     }
 
     private fun buildResourcesList(subject: String, topics: String): String {

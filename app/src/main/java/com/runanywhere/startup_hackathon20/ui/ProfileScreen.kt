@@ -23,13 +23,15 @@ fun ProfileScreen(
     userProfile: UserProfile,
     onBack: () -> Unit,
     onChangeMentor: () -> Unit,
-    onEditProfile: (String, String) -> Unit
+    onEditProfile: (String, String) -> Unit,
+    onLogout: () -> Unit = {}
 ) {
     FirebaseProfileScreen(
         userProfile = userProfile,
         onBack = onBack,
         onChangeMentor = onChangeMentor,
-        onEditProfile = onEditProfile
+        onEditProfile = onEditProfile,
+        onLogout = onLogout
     )
 }
 
@@ -39,9 +41,11 @@ fun FirebaseProfileScreen(
     userProfile: UserProfile,
     onBack: () -> Unit,
     onChangeMentor: () -> Unit,
-    onEditProfile: (String, String) -> Unit
+    onEditProfile: (String, String) -> Unit,
+    onLogout: () -> Unit = {}
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -207,6 +211,22 @@ fun FirebaseProfileScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Change Mentor", fontWeight = FontWeight.Bold)
             }
+
+            // Logout Button
+            Button(
+                onClick = { showLogoutDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFF5252)
+                ),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Default.ExitToApp, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Log Out", fontWeight = FontWeight.Bold)
+            }
         }
     }
 
@@ -219,6 +239,48 @@ fun FirebaseProfileScreen(
             onSave = { name, email ->
                 onEditProfile(name, email)
                 showEditDialog = false
+            }
+        )
+    }
+
+    // Logout Confirmation Dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            icon = {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = Color(0xFFFF5252),
+                    modifier = Modifier.size(48.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Confirm Logout",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text("Are you sure you want to log out? You'll need to sign in again to access your profile and progress.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLogoutDialog = false
+                        onLogout()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFF5252)
+                    )
+                ) {
+                    Text("Log Out")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) {
+                    Text("Cancel")
+                }
             }
         )
     }

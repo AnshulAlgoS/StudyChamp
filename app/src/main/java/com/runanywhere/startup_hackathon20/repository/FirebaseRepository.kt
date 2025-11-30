@@ -38,6 +38,41 @@ class FirebaseRepository {
         }
     }
     
+    suspend fun signInWithEmail(email: String, password: String): Result<FirebaseUser?> {
+        return try {
+            val result = auth.signInWithEmailAndPassword(email, password).await()
+            Result.success(result.user)
+        } catch (e: Exception) {
+            Log.e("FirebaseRepo", "Email sign in failed", e)
+            Result.failure(e)
+        }
+    }
+
+    suspend fun signUpWithEmail(
+        email: String,
+        password: String,
+        name: String
+    ): Result<FirebaseUser?> {
+        return try {
+            val result = auth.createUserWithEmailAndPassword(email, password).await()
+            val user = result.user
+
+            // Create user profile after signup
+            if (user != null) {
+                createUserProfile(name, email)
+            }
+
+            Result.success(user)
+        } catch (e: Exception) {
+            Log.e("FirebaseRepo", "Email sign up failed", e)
+            Result.failure(e)
+        }
+    }
+
+    fun signOut() {
+        auth.signOut()
+    }
+    
     suspend fun createUserProfile(name: String, email: String = ""): Result<UserProfile> {
         val user = getCurrentUser() ?: return Result.failure(Exception("No user logged in"))
         

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext traffic for wireless debugging and local development -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <!-- Trust system certificates (default) -->
+            <certificates src="system" />
+            <!-- Trust user-installed certificates (for debugging proxies like Charles) -->
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Specific domain configurations can be added here if needed -->
+    <!-- For production, you should restrict cleartext traffic -->
+</network-security-config>
